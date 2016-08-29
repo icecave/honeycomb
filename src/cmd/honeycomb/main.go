@@ -1,14 +1,12 @@
 package main
 
-import (
-	"fmt"
-
-	"github.com/icecave/honeycomb/src/di"
-)
+import "github.com/icecave/honeycomb/src/di"
 
 func main() {
-	c := &di.Container{}
-	cli := c.DockerClient()
-
-	fmt.Println(cli)
+	container := &di.Container{}
+	defer container.Close()
+	err := container.Server().Run()
+	if err != nil {
+		container.Logger().Fatalln(err)
+	}
 }

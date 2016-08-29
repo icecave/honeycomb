@@ -1,19 +1,13 @@
 package di
 
-import "sync"
-
 // Container stores wires together the root-level application dependencies.
 type Container struct {
 	values  map[string]interface{}
 	closers []func() error
-	mutex   sync.RWMutex
 }
 
 // Close cleans up any resources used by dependencies.
 func (con *Container) Close() {
-	con.mutex.Lock()
-	defer con.mutex.Unlock()
-
 	closers := con.closers
 	con.values = nil
 	con.closers = nil
@@ -31,16 +25,16 @@ func (con *Container) get(
 	initialize func() (interface{}, error),
 	close func() error,
 ) interface{} {
-	con.mutex.RLock()
 	value, ok := con.values[name]
-	con.mutex.RUnlock()
 
 	if !ok {
-		con.mutex.Lock()
-		defer con.mutex.Unlock()
-
 		if con.values == nil {
 			con.values = map[string]interface{}{}
+		} else {
+			value, ok = con.values[name]
+			if ok {
+				return value
+			}
 		}
 
 		var err error
