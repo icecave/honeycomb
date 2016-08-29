@@ -1,16 +1,51 @@
-hash: aca4bb7e4d35d4fd126d8d42d8a57df9ba8ce19d6713b69ba08c5e6f20d931e2
-updated: 2016-08-29T09:18:07.34788863+10:00
+hash: 6000fe063f7fb6d2f7b2e28503534adccfd47ff42f5ce5bf15636b309a19f27e
+updated: 2016-08-29T11:25:35.475631811+10:00
 imports:
-- name: github.com/gorilla/websocket
-  version: 1f512fc3f05332ba7117626cdfb4e07474e58e60
-- name: github.com/jonboulle/clockwork
-  version: 2eee05ed794112d45db504eb05aa693efd2b8b09
-- name: github.com/onsi/ginkgo
-  version: 462326b1628e124b23f42e87a8f2750e3c4e2d24
+- name: github.com/docker/distribution
+  version: c24e10f70a554022bf2c6a2a3a766211531efd34
   subpackages:
-  - ginkgo
-- name: github.com/onsi/gomega
-  version: a78ae492d53aad5a7a232d0d0462c14c400e3ee7
-- name: github.com/urfave/cli
-  version: 1efa31f08b9333f1bd4882d61f9d668a70cd902e
+  - digest
+  - reference
+- name: github.com/docker/engine-api
+  version: 3d1601b9d2436a70b0dfc045a23f6503d19195df
+  subpackages:
+  - client
+  - client/transport
+  - client/transport/cancellable
+  - types
+  - types/blkiodev
+  - types/container
+  - types/filters
+  - types/network
+  - types/reference
+  - types/registry
+  - types/strslice
+  - types/swarm
+  - types/time
+  - types/versions
+- name: github.com/docker/go-connections
+  version: 0bad1a3951398f88ef4dd75fdb42af374430be89
+  subpackages:
+  - nat
+  - sockets
+  - tlsconfig
+- name: github.com/docker/go-units
+  version: 0bbddae09c5a5419a8c6dcdd7ff90da3d450393b
+- name: github.com/Microsoft/go-winio
+  version: ce2922f643c8fd76b46cadc7f404a06282678b34
+- name: github.com/opencontainers/runc
+  version: b4ffe2974db985c205b23ee8d300cc148b494218
+  subpackages:
+  - libcontainer/user
+- name: github.com/Sirupsen/logrus
+  version: 55eb11d21d2a31a3cc93838241d04800f52e823d
+- name: golang.org/x/net
+  version: 4f2fc6c1e69d41baf187332ee08fbd2b296f21ed
+  subpackages:
+  - context
+  - proxy
+- name: golang.org/x/sys
+  version: d9157a9621b69ad1d8d77a1933590c416593f24f
+  subpackages:
+  - windows
 testImports: []

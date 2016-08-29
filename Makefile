@@ -92,6 +92,6 @@ $(COVERAGE_PATH)/coverage.cov: $(foreach P,$(PACKAGES),$(COVERAGE_PATH)/$(P)cove
 	@touch "$@"
 	go test "$(PKG)" -covermode=count -coverprofile="$@"
 
-artifacts/docker.touch: docker/Dockerfile $(BUILD_PATH)/release/linux/amd64/honeycomb $(shell find ./docker -type f)
-	docker build -f "$<" -t honeycomb:dev .
+artifacts/docker.touch: Dockerfile $(BUILD_PATH)/release/linux/amd64/honeycomb
+	docker build -t honeycomb:dev .
 	touch "$@"

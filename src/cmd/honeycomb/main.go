@@ -1,7 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/icecave/honeycomb/src/di"
+)
 
 func main() {
-	fmt.Println("honeycomb!")
+	c := &di.Container{}
+	cli := c.DockerClient()
+
+	fmt.Println(cli)
 }
