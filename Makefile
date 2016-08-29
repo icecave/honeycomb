@@ -47,7 +47,7 @@ lint: vendor
 prepare: lint coverage
 	travis lint
 
-ci: lint $(COVERAGE_PATH)/coverage.cov
+ci: lint $(COVERAGE_PATH)/coverage.cov docker
 
 .PHONY: build test debug release docker clean clean-all coverage open-coverage lint prepare ci
 
