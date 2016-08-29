@@ -5,3 +5,4 @@ import:
   subpackages:
   - types
   - client
+- package: github.com/lytics/cache
