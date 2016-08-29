@@ -21,6 +21,9 @@ TARGETS             := $(foreach BUILD,$(BUILD_MATRIX),$(foreach BIN,$(BINARIES)
 test: vendor
 	go test $(PACKAGES)
 
+run: build artifacts/certificates
+	CERTIFICATE_PATH=artifacts/certificates $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb
+
 build: $(addprefix $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/,$(BINARIES))
 
 debug: $(addprefix $(BUILD_PATH)/debug/,$(TARGETS))
@@ -49,7 +52,7 @@ prepare: lint coverage
 
 ci: lint $(COVERAGE_PATH)/coverage.cov docker
 
-.PHONY: build test debug release docker clean clean-all coverage open-coverage lint prepare ci
+.PHONY: build test run debug release docker clean clean-all coverage open-coverage lint prepare ci
 
 GLIDE := $(GOPATH)/bin/glide
 $(GLIDE):
@@ -95,3 +98,17 @@ $(COVERAGE_PATH)/coverage.cov: $(foreach P,$(PACKAGES),$(COVERAGE_PATH)/$(P)cove
 artifacts/docker.touch: Dockerfile $(BUILD_PATH)/release/linux/amd64/honeycomb
 	docker build -t honeycomb:dev .
 	touch "$@"
+
+artifacts/certificates:
+	@mkdir -p "$@"
+	openssl genrsa -out "$@/ca.key" 2048
+	openssl genrsa -out "$@/server.key" 2048
+	openssl req \
+	    -new \
+	    -x509 \
+	    -sha256 \
+	    -days 3650 \
+	    -extensions v3_ca \
+	    -key "$@/ca.key" \
+	    -out "$@/ca.crt" \
+	    -subj "/CN=Honeycomb Development CA"
