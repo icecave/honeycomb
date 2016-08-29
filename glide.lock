@@ -1,5 +1,5 @@
-hash: cbe7963c4fc943968d370c7d45ffcaf5d768772729cb2b277450dbd9364cafbd
-updated: 2016-08-29T13:40:13.430052478+10:00
+hash: 4ef0466aab43abf0eadccb4429cc0d7f8d98163627bf3fb0eaee82f0eaf3aca0
+updated: 2016-08-29T14:49:10.561267623+10:00
 imports:
 - name: github.com/docker/distribution
   version: c24e10f70a554022bf2c6a2a3a766211531efd34
@@ -31,6 +31,8 @@ imports:
   - tlsconfig
 - name: github.com/docker/go-units
   version: 0bbddae09c5a5419a8c6dcdd7ff90da3d450393b
+- name: github.com/gorilla/websocket
+  version: 1f512fc3f05332ba7117626cdfb4e07474e58e60
 - name: github.com/lytics/cache
   version: e7cd42f67282053ced607728823a7b21a34798f7
 - name: github.com/Microsoft/go-winio

@@ -6,3 +6,5 @@ import:
   - types
   - client
 - package: github.com/lytics/cache
+- package: github.com/gorilla/websocket
+  version: ^1.0.0
