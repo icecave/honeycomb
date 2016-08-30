@@ -33,7 +33,7 @@ func (con *Container) CertificateProvider() cert.Provider {
 
 // CertificatePath returns the name of the directory containing certificates.
 func (con *Container) CertificatePath() string {
-	return os.Getenv("CERTIFICATE_PATH") // @todo
+	return os.Getenv("CERTIFICATE_PATH")
 }
 
 // CACertificate returns the CA certificate used to generate ad-hoc certificates.
