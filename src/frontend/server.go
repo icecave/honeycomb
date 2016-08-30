@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log"
@@ -81,7 +82,7 @@ func (svr *Server) locateBackend(request *http.Request) (*backend.Endpoint, erro
 		domainName = request.Host
 	}
 
-	endpoint := svr.Locator.Locate(domainName)
+	endpoint := svr.Locator.Locate(request.Context(), domainName)
 	if endpoint == nil {
 		return nil, fmt.Errorf("can not locate back-end for '%s'", domainName)
 	}
@@ -99,7 +100,7 @@ func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 
 	// Make sure we can locate a back-end for the domain before we request a
 	// certificate for it ...
-	if svr.Locator.CanLocate(info.ServerName) {
+	if svr.Locator.CanLocate(context.TODO(), info.ServerName) {
 		return svr.CertificateProvider.GetCertificate(info)
 	}
 

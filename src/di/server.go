@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/icecave/honeycomb/src/backend"
+	"github.com/icecave/honeycomb/src/docker"
 	"github.com/icecave/honeycomb/src/frontend"
 	"github.com/icecave/honeycomb/src/proxy"
 )
@@ -41,15 +42,20 @@ func (con *Container) Locator() backend.Locator {
 	return con.get(
 		"server.locator",
 		func() (interface{}, error) {
-			locator := &backend.StaticLocator{}
-			locator.Add(
-				"foo.lvh.me",
-				&backend.Endpoint{
-					Address: "localhost:8080",
-					IsTLS:   false,
-				},
-			)
-			return locator, nil
+			// locator := &backend.StaticLocator{}
+			// locator.Add(
+			// 	"foo.lvh.me",
+			// 	&backend.Endpoint{
+			// 		Address: "localhost:8080",
+			// 		IsTLS:   false,
+			// 	},
+			// )
+			// return locator, nil
+
+			return docker.NewLocator(
+				con.DockerClient(),
+				con.Logger(),
+			), nil
 		},
 		nil,
 	).(backend.Locator)
