@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"golang.org/x/net/idna"
+
 	"github.com/gorilla/websocket"
 	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/cert"
@@ -88,7 +90,10 @@ func (svr *Server) locateBackend(request *http.Request) (*backend.Endpoint, erro
 }
 
 func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	if info.ServerName == "" {
+	domainName, err := idna.ToUnicode(info.ServerName)
+	if err != nil {
+		return nil, err
+	} else if domainName == "" {
 		return nil, fmt.Errorf("no SNI information")
 	}
 
@@ -100,7 +105,7 @@ func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 
 	// Ideally we would return an "unrecognised_name" TLS alert here, but Go's
 	// HTTP server has no way to do so, so let it fail with an "internal_error" ...
-	return nil, fmt.Errorf("can not locate back-end for '%s'", info.ServerName)
+	return nil, fmt.Errorf("can not locate back-end for '%s'", domainName)
 }
 
 func (svr *Server) logRequest(
