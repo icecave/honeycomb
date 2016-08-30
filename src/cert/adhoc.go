@@ -129,7 +129,12 @@ func (provider *adhocProvider) generate(domainName string) (*tls.Certificate, er
 	// Atomically replace the cache ...
 	provider.cache.Store(clone)
 
-	provider.logger.Printf("created certificate for '%s'", domainName)
+	provider.logger.Printf(
+		"cert: Issued certificate for '%s', expires at %s, issued by '%s'",
+		domainName,
+		certificate.Leaf.NotAfter.Format(time.RFC3339),
+		certificate.Leaf.Issuer.CommonName,
+	)
 
 	return certificate, nil
 }
@@ -140,7 +145,11 @@ func (provider *adhocProvider) purge(cache certificateCache) certificateCache {
 	clone := certificateCache{}
 	for domainName, certificate := range cache {
 		if provider.isStale(certificate) {
-			provider.logger.Printf("expired certificate for '%s'", domainName)
+			provider.logger.Printf(
+				"cert: Expired certificate for '%s', expired at %s",
+				domainName,
+				certificate.Leaf.NotAfter.Format(time.RFC3339),
+			)
 		} else {
 			clone[domainName] = certificate
 		}

@@ -1,5 +1,5 @@
-hash: 4ef0466aab43abf0eadccb4429cc0d7f8d98163627bf3fb0eaee82f0eaf3aca0
-updated: 2016-08-29T14:49:10.561267623+10:00
+hash: a753d6a1eca39f1c45b435fe94b7847ec382fbe0ae9690ed85d57dff058288cc
+updated: 2016-08-30T09:26:34.531334121+10:00
 imports:
 - name: github.com/docker/distribution
   version: c24e10f70a554022bf2c6a2a3a766211531efd34
@@ -33,10 +33,44 @@ imports:
   version: 0bbddae09c5a5419a8c6dcdd7ff90da3d450393b
 - name: github.com/gorilla/websocket
   version: 1f512fc3f05332ba7117626cdfb4e07474e58e60
+- name: github.com/jonboulle/clockwork
+  version: 2eee05ed794112d45db504eb05aa693efd2b8b09
 - name: github.com/lytics/cache
   version: e7cd42f67282053ced607728823a7b21a34798f7
 - name: github.com/Microsoft/go-winio
   version: ce2922f643c8fd76b46cadc7f404a06282678b34
+- name: github.com/onsi/ginkgo
+  version: 43e2af1f01ace55adbb6d7d0f30416476db1baae
+  subpackages:
+  - config
+  - ginkgo
+  - internal/codelocation
+  - internal/containernode
+  - internal/failer
+  - internal/leafnodes
+  - internal/remote
+  - internal/spec
+  - internal/specrunner
+  - internal/suite
+  - internal/testingtproxy
+  - internal/writer
+  - reporters
+  - reporters/stenographer
+  - types
+- name: github.com/onsi/gomega
+  version: b48c9a8b2644326d0a44eaaacc8d83e35174a05d
+  subpackages:
+  - format
+  - internal/assertion
+  - internal/asyncassertion
+  - internal/oraclematcher
+  - internal/testingtsupport
+  - matchers
+  - matchers/support/goraph/bipartitegraph
+  - matchers/support/goraph/edge
+  - matchers/support/goraph/node
+  - matchers/support/goraph/util
+  - types
 - name: github.com/opencontainers/runc
   version: b4ffe2974db985c205b23ee8d300cc148b494218
   subpackages:
@@ -51,5 +85,8 @@ imports:
 - name: golang.org/x/sys
   version: d9157a9621b69ad1d8d77a1933590c416593f24f
   subpackages:
+  - unix
   - windows
-testImports: []
+testImports:
+- name: gopkg.in/yaml.v2
+  version: e4d366fc3c7938e2958e662b4258c7a89e1f0e3e
