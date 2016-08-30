@@ -79,12 +79,12 @@ func (svr *Server) locateBackend(request *http.Request) (*backend.Endpoint, erro
 		domainName = request.Host
 	}
 
-	endpoint, ok := svr.Locator.Locate(domainName)
-	if ok {
-		return endpoint, nil
+	endpoint := svr.Locator.Locate(domainName)
+	if endpoint == nil {
+		return nil, fmt.Errorf("can not locate back-end for '%s'", domainName)
 	}
 
-	return nil, fmt.Errorf("can not locate back-end for '%s'", domainName)
+	return endpoint, nil
 }
 
 func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {

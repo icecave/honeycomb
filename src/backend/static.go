@@ -10,12 +10,12 @@ type StaticLocator struct {
 }
 
 // Locate finds the back-end HTTP server for the given domain name.
-func (locator *StaticLocator) Locate(domainName string) (*Endpoint, bool) {
+func (locator *StaticLocator) Locate(domainName string) *Endpoint {
 	locator.mutex.RLock()
-	endpoint, ok := locator.endpoints[domainName]
+	endpoint := locator.endpoints[domainName]
 	locator.mutex.RUnlock()
 
-	return endpoint, ok
+	return endpoint
 }
 
 // CanLocate checks if the given domain name can be resolved to a back-end.

@@ -4,7 +4,7 @@ package backend
 // requests (SNI).
 type Locator interface {
 	// Locate finds the back-end HTTP server for the given domain name.
-	Locate(domainName string) (*Endpoint, bool)
+	Locate(domainName string) *Endpoint
 
 	// CanLocate checks if the given domain name can be resolved to a back-end.
 	CanLocate(domainName string) bool
