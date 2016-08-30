@@ -9,22 +9,22 @@ import (
 )
 
 // Server returns a new front-end server.
-func (con *Container) Server() frontend.Server {
+func (con *Container) Server() *frontend.Server {
 	return con.get(
 		"server",
 		func() (interface{}, error) {
 			logger := con.Logger()
-			return frontend.NewServer(
-				con.BindAddress(),
-				con.Locator(),
-				con.CertificateProvider(),
-				proxy.NewHTTPProxy(logger),
-				proxy.NewWebSocketProxy(logger),
-				logger,
-			), nil
+			return &frontend.Server{
+				BindAddress:         con.BindAddress(),
+				Locator:             con.Locator(),
+				CertificateProvider: con.CertificateProvider(),
+				HTTPProxy:           proxy.NewHTTPProxy(logger),
+				WebSocketProxy:      proxy.NewWebSocketProxy(logger),
+				Logger:              logger,
+			}, nil
 		},
 		nil,
-	).(frontend.Server)
+	).(*frontend.Server)
 }
 
 // BindAddress returns the address that the server should listen on.

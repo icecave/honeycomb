@@ -1,4 +1,4 @@
-package frontend_test
+package proxy_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Frontend")
+	RunSpecs(t, "Proxy")
 }

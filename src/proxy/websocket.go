@@ -26,7 +26,7 @@ type webSocketProxy struct {
 // Serve forwards an HTTP request to a specific backend server.
 func (proxy *webSocketProxy) ForwardRequest(
 	endpoint *backend.Endpoint,
-	frontendResponse http.ResponseWriter,
+	frontendWriter *ResponseWriter,
 	frontendRequest *http.Request,
 ) error {
 	// Mangle the incoming request URL to point to the back-end ...
@@ -55,7 +55,7 @@ func (proxy *webSocketProxy) ForwardRequest(
 
 	// Upgrade the incoming connection to a websocket ...
 	frontendConnection, err := proxy.upgrader.Upgrade(
-		frontendResponse,
+		frontendWriter,
 		frontendRequest,
 		upgradeHeaders,
 	)

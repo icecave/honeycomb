@@ -1,4 +1,4 @@
-package frontend
+package proxy
 
 import (
 	"bufio"
@@ -12,7 +12,7 @@ type ResponseWriter struct {
 	Inner      http.ResponseWriter
 	StatusCode int
 	Size       int
-	FirstWrite func(int)
+	FirstWrite func()
 }
 
 // Header forwards to writer.Inner.Header()
@@ -36,7 +36,7 @@ func (writer *ResponseWriter) Write(data []byte) (int, error) {
 func (writer *ResponseWriter) WriteHeader(statusCode int) {
 	writer.StatusCode = statusCode
 	if writer.FirstWrite != nil {
-		writer.FirstWrite(statusCode)
+		writer.FirstWrite()
 	}
 	writer.Inner.WriteHeader(statusCode)
 }

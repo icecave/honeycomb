@@ -11,7 +11,7 @@ type Proxy interface {
 	// ForwardRequest forwards an HTTP request to a specific back-end server.
 	ForwardRequest(
 		endpoint *backend.Endpoint,
-		response http.ResponseWriter,
+		writer *ResponseWriter,
 		request *http.Request,
 	) error
 }

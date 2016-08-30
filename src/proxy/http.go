@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -26,17 +27,25 @@ type httpProxy struct {
 // Serve forwards an HTTP request to a specific back-end server.
 func (proxy *httpProxy) ForwardRequest(
 	endpoint *backend.Endpoint,
-	response http.ResponseWriter,
+	writer *ResponseWriter,
 	request *http.Request,
 ) error {
 	// Mangle the incoming request URL to point to the back-end ...
 	request.URL.Host = endpoint.Address
 	request.URL.Scheme = endpoint.GetScheme(false)
 
-	// @todo use buildBackendHeaders for consistency.
-	proxy.reverseProxy.ServeHTTP(response, request)
+	// @todo unify X-Forwarded-* headers with websocket proxy, this may not be
+	// possible with httputil.ReverseProxy.
+	proxy.reverseProxy.ServeHTTP(writer, request)
 
-	// @todo map 502 bad gateway produced to an error that can be handled
-	// by the layer above.
+	// httputil.ReverseProxy writes a bad gateway response with no body. We
+	// can't change the code, so at least add a response body. This should
+	// probably be a 504 Gateway Timeout in some circumstances anyway.
+	// @todo get access to the internal error to send the appropriate code and/or
+	// get rid of httputil.ReverseProxy entirely :/
+	if writer.StatusCode == http.StatusBadGateway && writer.Size == 0 {
+		io.WriteString(writer, "Bad Gateway")
+	}
+
 	return nil
 }

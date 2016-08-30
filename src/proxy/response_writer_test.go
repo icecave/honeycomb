@@ -1,4 +1,4 @@
-package frontend_test
+package proxy_test
 
 import (
 	"bufio"
@@ -6,20 +6,22 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/icecave/honeycomb/src/frontend"
+	"github.com/icecave/honeycomb/src/proxy"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ResponseWriter", func() {
-	var inner *fakeResponseWriter
-	var subject *frontend.ResponseWriter
+var _ = Describe("responseWriter", func() {
+	var (
+		inner   *fakeResponseWriter
+		subject *proxy.ResponseWriter
+	)
 
 	BeforeEach(func() {
 		inner = &fakeResponseWriter{
 			header: http.Header{"X-Header": []string{"<value>"}},
 		}
-		subject = &frontend.ResponseWriter{Inner: inner}
+		subject = &proxy.ResponseWriter{Inner: inner}
 	})
 
 	Describe("Header", func() {
@@ -63,13 +65,13 @@ var _ = Describe("ResponseWriter", func() {
 		})
 
 		It("calls FirstWrite with the status code", func() {
-			statusCode := 0
-			subject.FirstWrite = func(sc int) {
-				statusCode = sc
+			called := false
+			subject.FirstWrite = func() {
+				called = true
 			}
 
 			subject.WriteHeader(http.StatusNotFound)
-			Expect(statusCode).To(Equal(http.StatusNotFound))
+			Expect(called).To(BeTrue())
 		})
 	})
 
