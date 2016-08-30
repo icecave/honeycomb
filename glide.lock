@@ -1,13 +1,17 @@
-hash: a84055969ae5c1be2e32ca0c574e94c1d0818e4a3e1cec54a2ea376541e6e33f
-updated: 2016-08-30T12:57:34.122135623+10:00
+hash: 39a1d6a28acf0007fc59a3dd9b3a68eb53d852e42f1c5ca26815178b6f012532
+updated: 2016-08-30T18:28:53.263574337+10:00
 imports:
+- name: github.com/davecgh/go-spew
+  version: 6cf5744a041a0022271cefed95ba843f6d87fd51
+  subpackages:
+  - spew
 - name: github.com/docker/distribution
   version: c24e10f70a554022bf2c6a2a3a766211531efd34
   subpackages:
   - digest
   - reference
 - name: github.com/docker/engine-api
-  version: 3d1601b9d2436a70b0dfc045a23f6503d19195df
+  version: b66d7d91dbde8b568eab9587fe9cbdd08506ed2e
   subpackages:
   - client
   - client/transport
@@ -16,6 +20,7 @@ imports:
   - types/blkiodev
   - types/container
   - types/filters
+  - types/mount
   - types/network
   - types/reference
   - types/registry
@@ -79,6 +84,7 @@ imports:
   version: 4f2fc6c1e69d41baf187332ee08fbd2b296f21ed
   subpackages:
   - context
+  - idna
   - proxy
 - name: golang.org/x/sys
   version: d9157a9621b69ad1d8d77a1933590c416593f24f

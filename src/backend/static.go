@@ -1,6 +1,9 @@
 package backend
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 // StaticLocator finds a back-end HTTP server based on the server name in TLS
 // requests (SNI) by looking up back-ends in a static list.
@@ -10,7 +13,7 @@ type StaticLocator struct {
 }
 
 // Locate finds the back-end HTTP server for the given domain name.
-func (locator *StaticLocator) Locate(domainName string) *Endpoint {
+func (locator *StaticLocator) Locate(_ context.Context, domainName string) *Endpoint {
 	locator.mutex.RLock()
 	endpoint := locator.endpoints[domainName]
 	locator.mutex.RUnlock()
@@ -19,7 +22,7 @@ func (locator *StaticLocator) Locate(domainName string) *Endpoint {
 }
 
 // CanLocate checks if the given domain name can be resolved to a back-end.
-func (locator *StaticLocator) CanLocate(domainName string) bool {
+func (locator *StaticLocator) CanLocate(_ context.Context, domainName string) bool {
 	locator.mutex.RLock()
 	_, ok := locator.endpoints[domainName]
 	locator.mutex.RUnlock()
