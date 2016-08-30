@@ -64,9 +64,9 @@ var _ = Describe("responseWriter", func() {
 			Expect(inner.statusCode).To(Equal(http.StatusNotFound))
 		})
 
-		It("calls FirstWrite with the status code", func() {
+		It("calls OnRespond", func() {
 			called := false
-			subject.FirstWrite = func() {
+			subject.OnRespond = func() {
 				called = true
 			}
 
@@ -106,6 +106,18 @@ var _ = Describe("responseWriter", func() {
 		It("fails if the inner writer does not implement http.Hijacker", func() {
 			_, _, err := subject.Hijack()
 			Expect(err).To(MatchError("The wrapped response does not implement http.Hijacker."))
+		})
+
+		It("calls OnRespond", func() {
+			hijacker := fakeHijacker{}
+			subject.Inner = &hijacker
+			called := false
+			subject.OnHijack = func() {
+				called = true
+			}
+
+			subject.Hijack()
+			Expect(called).To(BeTrue())
 		})
 	})
 

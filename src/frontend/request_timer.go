@@ -3,31 +3,38 @@ package frontend
 import "time"
 
 type requestTimer struct {
-	ReceivedAt  time.Time
-	RespondedAt time.Time
-	CompletedAt time.Time
+	receivedAt  *time.Time
+	respondedAt *time.Time
+	completedAt *time.Time
 }
 
 func (timer *requestTimer) MarkReceived() {
-	timer.ReceivedAt = time.Now()
+	now := time.Now()
+	timer.receivedAt = &now
 }
 
 func (timer *requestTimer) MarkResponded() {
-	timer.RespondedAt = time.Now()
+	now := time.Now()
+	timer.respondedAt = &now
 }
 
 func (timer *requestTimer) MarkCompleted() {
-	timer.CompletedAt = time.Now()
+	now := time.Now()
+	timer.completedAt = &now
 }
 
 func (timer *requestTimer) TimeToFirstByte() time.Duration {
-	return timer.RespondedAt.Sub(timer.ReceivedAt)
-}
-
-func (timer *requestTimer) TransmissionTime() time.Duration {
-	return timer.CompletedAt.Sub(timer.RespondedAt)
+	return timer.respondedAt.Sub(*timer.receivedAt)
 }
 
 func (timer *requestTimer) TotalTime() time.Duration {
-	return timer.CompletedAt.Sub(timer.ReceivedAt)
+	return timer.completedAt.Sub(*timer.receivedAt)
+}
+
+func (timer *requestTimer) HasResponded() bool {
+	return timer.respondedAt != nil
+}
+
+func (timer *requestTimer) IsComplete() bool {
+	return timer.completedAt != nil
 }

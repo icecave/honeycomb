@@ -1,5 +1,5 @@
-hash: a753d6a1eca39f1c45b435fe94b7847ec382fbe0ae9690ed85d57dff058288cc
-updated: 2016-08-30T09:26:34.531334121+10:00
+hash: a84055969ae5c1be2e32ca0c574e94c1d0818e4a3e1cec54a2ea376541e6e33f
+updated: 2016-08-30T12:57:34.122135623+10:00
 imports:
 - name: github.com/docker/distribution
   version: c24e10f70a554022bf2c6a2a3a766211531efd34
@@ -33,8 +33,6 @@ imports:
   version: 0bbddae09c5a5419a8c6dcdd7ff90da3d450393b
 - name: github.com/gorilla/websocket
   version: 1f512fc3f05332ba7117626cdfb4e07474e58e60
-- name: github.com/jonboulle/clockwork
-  version: 2eee05ed794112d45db504eb05aa693efd2b8b09
 - name: github.com/lytics/cache
   version: e7cd42f67282053ced607728823a7b21a34798f7
 - name: github.com/Microsoft/go-winio

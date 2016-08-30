@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/websocket"
 	"github.com/icecave/honeycomb/src/backend"
@@ -50,18 +51,19 @@ func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http
 	timer := &requestTimer{}
 	timer.MarkReceived()
 
-	writer := &proxy.ResponseWriter{
-		Inner:      innerWriter,
-		FirstWrite: timer.MarkResponded,
-	}
-
 	endpoint, err := svr.locateBackend(request)
 	isWebSocket := websocket.IsWebSocketUpgrade(request)
+
+	writer := &proxy.ResponseWriter{Inner: innerWriter}
+	writer.OnRespond = timer.MarkResponded
+	writer.OnHijack = func() {
+		timer.MarkResponded()
+		svr.logRequest(endpoint, writer, request, timer, isWebSocket, nil)
+	}
 
 	if err != nil {
 		http.Error(writer, "Service Unavailable", http.StatusServiceUnavailable)
 	} else if isWebSocket {
-		svr.logRequest(endpoint, writer, request, timer, isWebSocket, nil)
 		err = svr.WebSocketProxy.ForwardRequest(endpoint, writer, request)
 	} else {
 		err = svr.HTTPProxy.ForwardRequest(endpoint, writer, request)
@@ -107,42 +109,61 @@ func (svr *Server) logRequest(
 	request *http.Request,
 	timer *requestTimer,
 	isWebSocket bool,
-	err error,
+	info interface{},
 ) {
+	frontend := ""
 	backend := "-"
-	if endpoint != nil {
-		backend = endpoint.Address
-	}
+	statusCode := 0
+	responseSize := "-"
+	timeToFirstByte := "-"
+	totalTime := "-"
 
-	method := request.Method
 	if isWebSocket {
-		method = "WEBSOCK"
+		frontend = "wss://" + request.Host
+		statusCode = http.StatusSwitchingProtocols
+		responseSize = "-"
+	} else {
+		frontend = "https://" + request.Host
+		statusCode = writer.StatusCode
+		responseSize = strconv.Itoa(writer.Size)
 	}
 
-	message := fmt.Sprintf(
-		"http: [%s] %s %s \"%s %s %s\"",
-		request.RemoteAddr,
-		request.Host,
-		backend,
-		method,
-		request.URL,
-		request.Proto,
-	)
-
-	// A response has been received ...
-	if writer.StatusCode != 0 {
-		message += fmt.Sprintf(
-			" %d %d +%s +%s",
-			writer.StatusCode,
-			writer.Size,
-			timer.TimeToFirstByte(),
-			timer.TransmissionTime(),
+	if endpoint != nil {
+		backend = fmt.Sprintf(
+			"%s://%s",
+			endpoint.GetScheme(isWebSocket),
+			endpoint.Address,
 		)
 	}
 
-	if err != nil {
-		message += " " + err.Error()
+	if timer.HasResponded() {
+		timeToFirstByte = timer.TimeToFirstByte().String()
+
+		if timer.IsComplete() {
+			totalTime = timer.TotalTime().String()
+		} else if isWebSocket && info == nil {
+			info = "connection established"
+		}
 	}
 
-	svr.Logger.Println(message)
+	if info == nil {
+		info = ""
+	} else {
+		info = fmt.Sprintf(" (%s)", info)
+	}
+
+	svr.Logger.Printf(
+		"http: %s %s %s \"%s %s %s\" %d %s %s %s%s",
+		request.RemoteAddr,
+		frontend,
+		backend,
+		request.Method,
+		request.URL,
+		request.Proto,
+		statusCode,
+		responseSize,
+		timeToFirstByte,
+		totalTime,
+		info,
+	)
 }

@@ -12,7 +12,8 @@ type ResponseWriter struct {
 	Inner      http.ResponseWriter
 	StatusCode int
 	Size       int
-	FirstWrite func()
+	OnRespond  func()
+	OnHijack   func()
 }
 
 // Header forwards to writer.Inner.Header()
@@ -35,8 +36,8 @@ func (writer *ResponseWriter) Write(data []byte) (int, error) {
 // WriteHeader forwards to writer.Inner.WriteHeader()
 func (writer *ResponseWriter) WriteHeader(statusCode int) {
 	writer.StatusCode = statusCode
-	if writer.FirstWrite != nil {
-		writer.FirstWrite()
+	if writer.OnRespond != nil {
+		writer.OnRespond()
 	}
 	writer.Inner.WriteHeader(statusCode)
 }
@@ -55,6 +56,10 @@ func (writer *ResponseWriter) Flush() {
 func (writer *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	hijacker, ok := writer.Inner.(http.Hijacker)
 	if ok {
+		if writer.OnHijack != nil {
+			writer.OnHijack()
+		}
+
 		return hijacker.Hijack()
 	}
 
