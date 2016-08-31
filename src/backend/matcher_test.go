@@ -11,53 +11,21 @@ import (
 
 var _ = Describe("Matcher", func() {
 	Describe("NewMatcher", func() {
-		It("accepts a pattern with no wildcards", func() {
-			subject, err := backend.NewMatcher("host.domain-name.tld")
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(subject).ShouldNot(BeNil())
-
-			Expect(subject.Pattern).To(Equal("host.domain-name.tld"))
-		})
-
-		It("accepts a pattern with a wildcard prefix", func() {
-			subject, err := backend.NewMatcher("*.domain-name.tld")
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(subject).ShouldNot(BeNil())
-
-			Expect(subject.Pattern).To(Equal("*.domain-name.tld"))
-		})
-
-		It("accepts a pattern with a wildcard suffix", func() {
-			subject, err := backend.NewMatcher("host.*")
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(subject).ShouldNot(BeNil())
-
-			Expect(subject.Pattern).To(Equal("host.*"))
-		})
-
-		It("accepts a pattern with a wildcard prefix and suffix", func() {
-			subject, err := backend.NewMatcher("*.host.*")
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(subject).ShouldNot(BeNil())
-
-			Expect(subject.Pattern).To(Equal("*.host.*"))
-		})
-
-		It("accepts a wildcard pattern with no domain part", func() {
-			subject, err := backend.NewMatcher("*.*")
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(subject).ShouldNot(BeNil())
-
-			Expect(subject.Pattern).To(Equal("*.*"))
-		})
-
-		It("accepts a catch-all wildcard pattern", func() {
-			subject, err := backend.NewMatcher("*")
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(subject).ShouldNot(BeNil())
-
-			Expect(subject.Pattern).To(Equal("*"))
-		})
+		DescribeTable(
+			"accepts valid patterns",
+			func(pattern string) {
+				subject, err := backend.NewMatcher(pattern)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(subject).ShouldNot(BeNil())
+				Expect(subject.Pattern).To(Equal(pattern))
+			},
+			Entry("exact match", "host.dømåin-name.tld"),
+			Entry("wildcard prefix", "*.dømåin-name.tld"),
+			Entry("wildcard suffix", "host.*"),
+			Entry("wildcard", "*.dømåin-name.*"),
+			Entry("catch all with dot", "*.*"),
+			Entry("catch all", "*"),
+		)
 
 		DescribeTable(
 			"it rejects patterns with invalid domain names",
@@ -66,6 +34,7 @@ var _ = Describe("Matcher", func() {
 				Expect(err).To(MatchError("'" + pattern + "' is not a valid domain pattern"))
 				Expect(subject).Should(BeNil())
 			},
+			Entry("empty", ""),
 			Entry("invalid character", "/"),
 			Entry("dot before hyphen", "foo.-bar"),
 			Entry("hypen before dot", "foo.-bar"),
@@ -80,4 +49,46 @@ var _ = Describe("Matcher", func() {
 		)
 	})
 
+	Describe("Match", func() {
+		DescribeTable(
+			"it returns true when passed a matching server name",
+			func(pattern, serverName string) {
+				subject, _ := backend.NewMatcher(pattern)
+				Expect(subject.Match(serverName)).To(BeTrue())
+			},
+			Entry("exact match", "host.dømåin-name.tld", "host.dømåin-name.tld"),
+			Entry("wildcard prefix", "*.dømåin-name.tld", "host.dømåin-name.tld"),
+			Entry("wildcard suffix", "host.*", "host.dømåin-name.tld"),
+			Entry("wildcard", "*.dømåin-name.*", "host.dømåin-name.tld"),
+			Entry("catch all with dot", "*.*", "host.dømåin-name.tld"),
+			Entry("catch all", "*", "host.dømåin-name.tld"),
+		)
+
+		DescribeTable(
+			"it returns false when passed a non-matching server name",
+			func(pattern, serverName string) {
+				subject, _ := backend.NewMatcher(pattern)
+				Expect(subject.Match(serverName)).To(BeFalse())
+			},
+			Entry("exact match", "host.dømåin-name.tld", "host.different.tld"),
+			Entry("wildcard prefix", "*.dømåin-name.tld", "host.different.tld"),
+			Entry("wildcard suffix", "host.*", "different.dømåin-name.tld"),
+			Entry("wildcard", "*.dømåin-name.*", "host.different.tld"),
+			Entry("catch all with dot", "*.*", "no-dot"),
+		)
+
+		DescribeTable(
+			"it returns false when passed an empty string",
+			func(pattern string) {
+				subject, _ := backend.NewMatcher(pattern)
+				Expect(subject.Match("")).To(BeFalse())
+			},
+			Entry("exact match", "host.dømåin-name.tld"),
+			Entry("wildcard prefix", "*.dømåin-name.tld"),
+			Entry("wildcard suffix", "host.*"),
+			Entry("wildcard", "*.dømåin-name.*"),
+			Entry("catch all with dot", "*.*"),
+			Entry("catch all", "*"),
+		)
+	})
 })

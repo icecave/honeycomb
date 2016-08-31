@@ -64,6 +64,10 @@ func NewMatcher(pattern string) (*Matcher, error) {
 
 // Match checks if the pattern matches the given server name.
 func (matcher Matcher) Match(serverName string) bool {
+	if serverName == "" {
+		return false
+	}
+
 	serverName = strings.ToLower(serverName)
 
 	if matcher.wildPrefix && matcher.wildSuffix {
