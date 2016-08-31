@@ -54,7 +54,7 @@ func NewMatcher(pattern string) (*Matcher, error) {
 
 	if !isDomainName(domainPart) {
 		return nil, fmt.Errorf(
-			"'%s' is not a valid domain pattern",
+			"'%s' is not a valid server name pattern",
 			domainPart,
 		)
 	}

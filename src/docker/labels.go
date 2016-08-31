@@ -1,7 +1,7 @@
 package docker
 
 const (
-	domainLabel = "honeycomb.domain"
-	portLabel   = "honeycomb.port"
-	isTLSLabel  = "honeycomb.tls"
+	matchLabel = "honeycomb.match"
+	portLabel  = "honeycomb.port"
+	isTLSLabel = "honeycomb.tls"
 )

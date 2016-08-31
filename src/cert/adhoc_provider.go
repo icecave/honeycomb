@@ -15,7 +15,7 @@ import (
 )
 
 // NewAdhocProvider returns a certificate provider that generates new
-// certificates when requested. It is used for development domains that are not
+// certificates when requested. It is used for development servers that are not
 // accessible from the internet.
 func NewAdhocProvider(
 	issuerCertificate *tls.Certificate,
@@ -46,7 +46,7 @@ func NewAdhocProvider(
 }
 
 // adhocProvider is a certificate provider that generates new certificates
-// when requested. It is used for development domains that are not accessible
+// when requested. It is used for development servers that are not accessible
 // from the internet.
 type adhocProvider struct {
 	// The issuer certificate, used to sign new server certificates (typically
@@ -70,7 +70,7 @@ type adhocProvider struct {
 	// cache expiration.
 	logger *log.Logger
 
-	// The certificate cache, maps domain name to TLS certificate.
+	// The certificate cache, maps server name to TLS certificate.
 	cache atomic.Value
 
 	// A mutex for ensuring only one certificate is generated at a time.
@@ -82,12 +82,12 @@ type certificateCache map[string]*tls.Certificate
 // GetCertificate returns the certificate for the given TLS request. If the
 // certificate is not available in the cache, a new one is generated.
 func (provider *adhocProvider) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	// Normalize the domain name ...
-	domainName := strings.ToLower(info.ServerName)
+	// Normalize the server name ...
+	serverName := strings.ToLower(info.ServerName)
 
 	// Load the cache object atomically ...
 	cache := provider.cache.Load().(certificateCache)
-	certificate := cache[domainName]
+	certificate := cache[serverName]
 
 	// Return the certificate if it's present and not expired ...
 	if certificate != nil && !provider.isStale(certificate) {
@@ -95,28 +95,28 @@ func (provider *adhocProvider) GetCertificate(info *tls.ClientHelloInfo) (*tls.C
 	}
 
 	// Generate a new certificate ...
-	return provider.generate(domainName)
+	return provider.generate(serverName)
 }
 
-// generate creates a new certificate for the given domain name and stores it
+// generate creates a new certificate for the given server name and stores it
 // in the cache, it also purges any expired certificates.
-func (provider *adhocProvider) generate(domainName string) (*tls.Certificate, error) {
+func (provider *adhocProvider) generate(serverName string) (*tls.Certificate, error) {
 	// Acquire the mutex, preventing two goroutines from possibly generating the
 	// same certificate. Lock contention *may* be improved by using a seperate
-	// mutex for each domain, but this is probably fine for development ...
+	// mutex for each server, but this is probably fine for development ...
 	provider.mutex.Lock()
 	defer provider.mutex.Unlock()
 
 	// Check the cache in case another goroutine has generated the certificate
 	// while we were waiting for the mutex ...
 	cache := provider.cache.Load().(certificateCache)
-	certificate := cache[domainName]
+	certificate := cache[serverName]
 	if certificate != nil && !provider.isStale(certificate) {
 		return certificate, nil
 	}
 
 	// Create the new certificate ...
-	certificate, err := provider.newCertificate(domainName)
+	certificate, err := provider.newCertificate(serverName)
 	if err != nil {
 		return nil, err
 	}
@@ -124,14 +124,14 @@ func (provider *adhocProvider) generate(domainName string) (*tls.Certificate, er
 	// Create a clone of the cache without expired certificates, and with the
 	// newly generated certificate ...
 	clone := provider.purge(cache)
-	clone[domainName] = certificate
+	clone[serverName] = certificate
 
 	// Atomically replace the cache ...
 	provider.cache.Store(clone)
 
 	provider.logger.Printf(
 		"cert: Issued certificate for '%s', expires at %s, issued by '%s'",
-		domainName,
+		serverName,
 		certificate.Leaf.NotAfter.Format(time.RFC3339),
 		certificate.Leaf.Issuer.CommonName,
 	)
@@ -143,15 +143,15 @@ func (provider *adhocProvider) generate(domainName string) (*tls.Certificate, er
 // certificates ...
 func (provider *adhocProvider) purge(cache certificateCache) certificateCache {
 	clone := certificateCache{}
-	for domainName, certificate := range cache {
+	for serverName, certificate := range cache {
 		if provider.isStale(certificate) {
 			provider.logger.Printf(
 				"cert: Expired certificate for '%s', expired at %s",
-				domainName,
+				serverName,
 				certificate.Leaf.NotAfter.Format(time.RFC3339),
 			)
 		} else {
-			clone[domainName] = certificate
+			clone[serverName] = certificate
 		}
 	}
 
@@ -165,9 +165,9 @@ func (provider *adhocProvider) isStale(certificate *tls.Certificate) bool {
 	return time.Now().After(expiresAt)
 }
 
-// newCertificate generates a new TLS certificate for the given domain name.
-func (provider *adhocProvider) newCertificate(domainName string) (*tls.Certificate, error) {
-	template, err := provider.newTemplate(domainName)
+// newCertificate generates a new TLS certificate for the given server name.
+func (provider *adhocProvider) newCertificate(serverName string) (*tls.Certificate, error) {
+	template, err := provider.newTemplate(serverName)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (provider *adhocProvider) newCertificate(domainName string) (*tls.Certifica
 }
 
 // newTemplate returns the certificate template used to make new certificates.
-func (provider *adhocProvider) newTemplate(domainName string) (*x509.Certificate, error) {
+func (provider *adhocProvider) newTemplate(serverName string) (*x509.Certificate, error) {
 	serialNumber, err := rand.Int(
 		rand.Reader,
 		new(big.Int).Lsh(big.NewInt(1), 128),
@@ -210,12 +210,12 @@ func (provider *adhocProvider) newTemplate(domainName string) (*x509.Certificate
 
 	return &x509.Certificate{
 		SerialNumber:          serialNumber,
-		Subject:               pkix.Name{CommonName: domainName},
+		Subject:               pkix.Name{CommonName: serverName},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
 		BasicConstraintsValid: true,
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		DNSNames:              []string{domainName},
+		DNSNames:              []string{serverName},
 	}, nil
 }

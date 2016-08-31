@@ -77,36 +77,36 @@ func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http
 }
 
 func (svr *Server) locateBackend(request *http.Request) (*backend.Endpoint, error) {
-	domainName, _, err := net.SplitHostPort(request.Host)
+	serverName, _, err := net.SplitHostPort(request.Host)
 	if err != nil {
-		domainName = request.Host
+		serverName = request.Host
 	}
 
-	endpoint := svr.Locator.Locate(request.Context(), domainName)
+	endpoint := svr.Locator.Locate(request.Context(), serverName)
 	if endpoint == nil {
-		return nil, fmt.Errorf("can not locate back-end for '%s'", domainName)
+		return nil, fmt.Errorf("can not locate back-end for '%s'", serverName)
 	}
 
 	return endpoint, nil
 }
 
 func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	domainName, err := idna.ToUnicode(info.ServerName)
+	serverName, err := idna.ToUnicode(info.ServerName)
 	if err != nil {
 		return nil, err
-	} else if domainName == "" {
+	} else if serverName == "" {
 		return nil, fmt.Errorf("no SNI information")
 	}
 
-	// Make sure we can locate a back-end for the domain before we request a
-	// certificate for it ...
+	// Make sure we can locate a back-end for the server name before we request
+	// a certificate for it ...
 	if svr.Locator.CanLocate(context.TODO(), info.ServerName) {
 		return svr.CertificateProvider.GetCertificate(info)
 	}
 
 	// Ideally we would return an "unrecognised_name" TLS alert here, but Go's
 	// HTTP server has no way to do so, so let it fail with an "internal_error" ...
-	return nil, fmt.Errorf("can not locate back-end for '%s'", domainName)
+	return nil, fmt.Errorf("can not locate back-end for '%s'", serverName)
 }
 
 func (svr *Server) logRequest(

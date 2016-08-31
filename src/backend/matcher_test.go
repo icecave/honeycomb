@@ -28,10 +28,10 @@ var _ = Describe("Matcher", func() {
 		)
 
 		DescribeTable(
-			"it rejects patterns with invalid domain names",
+			"it rejects patterns with invalid server names",
 			func(pattern string) {
 				subject, err := backend.NewMatcher(pattern)
-				Expect(err).To(MatchError("'" + pattern + "' is not a valid domain pattern"))
+				Expect(err).To(MatchError("'" + pattern + "' is not a valid server name pattern"))
 				Expect(subject).Should(BeNil())
 			},
 			Entry("empty", ""),

@@ -37,7 +37,7 @@ func (con *Container) BindAddress() string {
 	return ":" + port
 }
 
-// Locator returns the back-end locator used to resolve domain names to servers.
+// Locator returns the back-end locator used to resolve server names to endpoints.
 func (con *Container) Locator() backend.Locator {
 	return con.get(
 		"server.locator",
@@ -52,10 +52,7 @@ func (con *Container) Locator() backend.Locator {
 			// )
 			// return locator, nil
 
-			return docker.NewLocator(
-				con.DockerClient(),
-				con.Logger(),
-			), nil
+			return docker.NewLocator(con.ServiceLoader()), nil
 		},
 		nil,
 	).(backend.Locator)

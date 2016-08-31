@@ -2,10 +2,9 @@ package backend
 
 // Endpoint holds information about a back-end HTTP(s) server.
 type Endpoint struct {
-	// A human-readable name for the end-point.
-	Name string
-
-	ServerNamePattern string
+	// A human readable description of what the end-point is, not necessarily
+	// unique to this endpoint.
+	Description string
 
 	// Address hosts the network address of the back-end server, including the
 	// port number or name.
