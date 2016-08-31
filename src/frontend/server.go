@@ -134,6 +134,7 @@ func (svr *Server) logRequest(
 		responseSize = strconv.Itoa(writer.Size)
 	}
 
+	// @todo use endpoint.Name in the logs somewhere
 	if endpoint != nil {
 		backend = fmt.Sprintf(
 			"%s://%s",

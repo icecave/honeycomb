@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("responseWriter", func() {
+var _ = Describe("ResponseWriter", func() {
 	var (
 		inner   *fakeResponseWriter
 		subject *proxy.ResponseWriter

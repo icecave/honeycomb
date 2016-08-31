@@ -5,6 +5,8 @@ type Endpoint struct {
 	// A human-readable name for the end-point.
 	Name string
 
+	ServerNamePattern string
+
 	// Address hosts the network address of the back-end server, including the
 	// port number or name.
 	Address string
