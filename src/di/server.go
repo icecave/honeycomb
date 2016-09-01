@@ -22,6 +22,9 @@ func (con *Container) Server() *frontend.Server {
 				HTTPProxy:           proxy.NewHTTPProxy(logger),
 				WebSocketProxy:      proxy.NewWebSocketProxy(logger),
 				Logger:              logger,
+				Metrics: &frontend.StatsDMetrics{
+					Client: con.StatsDClient(),
+				},
 			}, nil
 		},
 		nil,

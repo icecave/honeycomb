@@ -23,7 +23,7 @@ func (con *Container) Close() {
 func (con *Container) get(
 	name string,
 	initialize func() (interface{}, error),
-	close func() error,
+	close func(interface{}) error,
 ) interface{} {
 	value, ok := con.values[name]
 
@@ -46,7 +46,12 @@ func (con *Container) get(
 		con.values[name] = value
 
 		if close != nil {
-			con.closers = append(con.closers, close)
+			con.closers = append(
+				con.closers,
+				func() error {
+					return close(value)
+				},
+			)
 		}
 	}
 

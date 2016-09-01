@@ -25,6 +25,7 @@ type Server struct {
 	HTTPProxy           proxy.Proxy
 	WebSocketProxy      proxy.Proxy
 	Logger              *log.Logger
+	Metrics             Metrics
 }
 
 // Run starts the server and blocks until it exits.
@@ -51,29 +52,32 @@ func (svr *Server) Run() error {
 
 // forwardRequest is the server's internal request handler
 func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http.Request) {
-	timer := &requestTimer{}
-	timer.MarkReceived()
+	var ctx requestContext
+	ctx.Request = request
+	ctx.Timer.MarkReceived()
+	ctx.IsWebSocket = websocket.IsWebSocketUpgrade(request)
+	ctx.Endpoint, ctx.Error = svr.locateBackend(request)
 
-	endpoint, err := svr.locateBackend(request)
-	isWebSocket := websocket.IsWebSocketUpgrade(request)
-
-	writer := &proxy.ResponseWriter{Inner: innerWriter}
-	writer.OnRespond = timer.MarkResponded
-	writer.OnHijack = func() {
-		timer.MarkResponded()
-		svr.logRequest(endpoint, writer, request, timer, isWebSocket, nil)
+	ctx.Writer.Inner = innerWriter
+	ctx.Writer.OnRespond = ctx.Timer.MarkResponded
+	ctx.Writer.OnHijack = func() {
+		ctx.Timer.MarkResponded()
+		svr.logRequest(&ctx)
 	}
 
-	if err != nil {
-		http.Error(writer, "Service Unavailable", http.StatusServiceUnavailable)
-	} else if isWebSocket {
-		err = svr.WebSocketProxy.ForwardRequest(endpoint, writer, request)
+	svr.Metrics.StartRequest(&ctx)
+
+	if ctx.Error != nil {
+		http.Error(&ctx.Writer, "Service Unavailable", http.StatusServiceUnavailable)
+	} else if ctx.IsWebSocket {
+		ctx.Error = svr.WebSocketProxy.ForwardRequest(ctx.Endpoint, &ctx.Writer, ctx.Request)
 	} else {
-		err = svr.HTTPProxy.ForwardRequest(endpoint, writer, request)
+		ctx.Error = svr.HTTPProxy.ForwardRequest(ctx.Endpoint, &ctx.Writer, ctx.Request)
 	}
 
-	timer.MarkCompleted()
-	svr.logRequest(endpoint, writer, request, timer, isWebSocket, err)
+	ctx.Timer.MarkCompleted()
+	svr.logRequest(&ctx)
+	svr.Metrics.EndRequest(&ctx)
 }
 
 func (svr *Server) locateBackend(request *http.Request) (*backend.Endpoint, error) {
@@ -109,64 +113,60 @@ func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 	return nil, fmt.Errorf("can not locate back-end for '%s'", serverName)
 }
 
-func (svr *Server) logRequest(
-	endpoint *backend.Endpoint,
-	writer *proxy.ResponseWriter,
-	request *http.Request,
-	timer *requestTimer,
-	isWebSocket bool,
-	info interface{},
-) {
+func (svr *Server) logRequest(ctx *requestContext) {
 	frontend := ""
 	backend := "-"
 	statusCode := 0
 	responseSize := "-"
 	timeToFirstByte := "-"
 	totalTime := "-"
+	info := ""
 
-	if isWebSocket {
-		frontend = "wss://" + request.Host
+	if ctx.Error != nil {
+		info = ctx.Error.Error()
+	}
+
+	if ctx.IsWebSocket {
+		frontend = "wss://" + ctx.Request.Host
 		statusCode = http.StatusSwitchingProtocols
 		responseSize = "-"
 	} else {
-		frontend = "https://" + request.Host
-		statusCode = writer.StatusCode
-		responseSize = strconv.Itoa(writer.Size)
+		frontend = "https://" + ctx.Request.Host
+		statusCode = ctx.Writer.StatusCode
+		responseSize = strconv.Itoa(ctx.Writer.Size)
 	}
 
 	// @todo use endpoint.Name in the logs somewhere
-	if endpoint != nil {
+	if ctx.Endpoint != nil {
 		backend = fmt.Sprintf(
 			"%s://%s",
-			endpoint.GetScheme(isWebSocket),
-			endpoint.Address,
+			ctx.Endpoint.GetScheme(ctx.IsWebSocket),
+			ctx.Endpoint.Address,
 		)
 	}
 
-	if timer.HasResponded() {
-		timeToFirstByte = timer.TimeToFirstByte().String()
+	if ctx.Timer.HasResponded() {
+		timeToFirstByte = ctx.Timer.TimeToFirstByte().String()
 
-		if timer.IsComplete() {
-			totalTime = timer.TotalTime().String()
-		} else if isWebSocket && info == nil {
+		if ctx.Timer.IsComplete() {
+			totalTime = ctx.Timer.TimeToLastByte().String()
+		} else if ctx.IsWebSocket && info == "" {
 			info = "connection established"
 		}
 	}
 
-	if info == nil {
-		info = ""
-	} else {
+	if info != "" {
 		info = fmt.Sprintf(" (%s)", info)
 	}
 
 	svr.Logger.Printf(
 		"http: %s %s %s \"%s %s %s\" %d %s %s %s%s",
-		request.RemoteAddr,
+		ctx.Request.RemoteAddr,
 		frontend,
 		backend,
-		request.Method,
-		request.URL,
-		request.Proto,
+		ctx.Request.Method,
+		ctx.Request.URL,
+		ctx.Request.Proto,
 		statusCode,
 		responseSize,
 		timeToFirstByte,

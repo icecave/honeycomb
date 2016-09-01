@@ -27,7 +27,7 @@ func (timer *requestTimer) TimeToFirstByte() time.Duration {
 	return timer.respondedAt.Sub(*timer.receivedAt)
 }
 
-func (timer *requestTimer) TotalTime() time.Duration {
+func (timer *requestTimer) TimeToLastByte() time.Duration {
 	return timer.completedAt.Sub(*timer.receivedAt)
 }
 
