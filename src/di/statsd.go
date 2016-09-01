@@ -41,11 +41,15 @@ func (con *Container) StatsDClient() *statsd.Client {
 	return con.get(
 		"statsd.client",
 		func() (interface{}, error) {
-			return statsd.New(
+			// If there is an error, the client will be "muted", essentially
+			// a no-op client.  @todo, use a client that can recover from failures
+			client, _ := statsd.New(
 				statsd.Address(con.StatsDAddress()),
 				statsd.Prefix(con.StatsDPrefix()),
 				statsd.FlushPeriod(con.StatsDInterval()),
 			)
+
+			return client, nil
 		},
 		func(value interface{}) error {
 			value.(*statsd.Client).Close()
