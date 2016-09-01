@@ -21,4 +21,4 @@ import:
 - package: golang.org/x/net
   subpackages:
   - idna
-- package: github.com/quipo/statsd
+- package: gopkg.in/alexcesaro/statsd.v2

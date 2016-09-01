@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/quipo/statsd"
+	statsd "gopkg.in/alexcesaro/statsd.v2"
 )
 
 // StatsDAddress returns the network address of the statsd server.
@@ -18,7 +18,7 @@ func (con *Container) StatsDPrefix() string {
 		return prefix
 	}
 
-	return "honeycomb."
+	return "honeycomb"
 }
 
 // StatsDInterval returns the interval at which stats are flushed.
@@ -30,37 +30,26 @@ func (con *Container) StatsDInterval() time.Duration {
 				return time.ParseDuration(interval)
 			}
 
-			return time.Duration(0), nil
+			return time.Duration(100 * time.Millisecond), nil
 		},
 		nil,
 	).(time.Duration)
 }
 
 // StatsDClient returns the statsd client used to send metrics.
-func (con *Container) StatsDClient() statsd.Statsd {
+func (con *Container) StatsDClient() *statsd.Client {
 	return con.get(
 		"statsd.client",
 		func() (interface{}, error) {
-			client := statsd.NewStatsdClient(
-				con.StatsDAddress(),
-				con.StatsDPrefix(),
+			return statsd.New(
+				statsd.Address(con.StatsDAddress()),
+				statsd.Prefix(con.StatsDPrefix()),
+				statsd.FlushPeriod(con.StatsDInterval()),
 			)
-
-			err := client.CreateSocket()
-			if err != nil {
-				return nil, err
-			}
-
-			interval := con.StatsDInterval()
-			if interval == 0 {
-				return client, nil
-			}
-
-			return statsd.NewStatsdBuffer(interval, client), nil
 		},
 		func(value interface{}) error {
-			value.(statsd.Statsd).Close()
+			value.(*statsd.Client).Close()
 			return nil
 		},
-	).(statsd.Statsd)
+	).(*statsd.Client)
 }

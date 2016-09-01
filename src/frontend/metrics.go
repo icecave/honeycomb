@@ -2,8 +2,9 @@ package frontend
 
 import (
 	"fmt"
+	"time"
 
-	"github.com/quipo/statsd"
+	statsd "gopkg.in/alexcesaro/statsd.v2"
 )
 
 type Metrics interface {
@@ -12,32 +13,35 @@ type Metrics interface {
 }
 
 type StatsDMetrics struct {
-	Client statsd.Statsd
+	Client *statsd.Client
 }
 
 func (metrics *StatsDMetrics) StartRequest(ctx *requestContext) {
 	if ctx.IsWebSocket {
-		metrics.Client.Incr("websocket.requests", 1)
+		metrics.Client.Increment("websocket.requests")
 	} else {
-		metrics.Client.Incr(fmt.Sprintf(
+		metrics.Client.Increment(fmt.Sprintf(
 			"http.requests.%s",
 			ctx.Request.Method,
-		), 1)
+		))
 	}
 }
 
 func (metrics *StatsDMetrics) EndRequest(ctx *requestContext) {
+	ttfb := int(ctx.Timer.TimeToFirstByte() / time.Millisecond)
+	ttlb := int(ctx.Timer.TimeToLastByte() / time.Millisecond)
+
 	if ctx.IsWebSocket {
-		metrics.Client.PrecisionTiming("websocket.ttfb", ctx.Timer.TimeToFirstByte())
-		metrics.Client.PrecisionTiming("websocket.ttlb", ctx.Timer.TimeToLastByte())
+		metrics.Client.Timing("websocket.ttfb", ttfb)
+		metrics.Client.Timing("websocket.ttlb", ttlb)
 	} else {
-		metrics.Client.Incr(fmt.Sprintf(
+		metrics.Client.Increment(fmt.Sprintf(
 			"http.responses.%s.%d",
 			ctx.Request.Method,
 			ctx.Writer.StatusCode,
-		), 2)
+		))
 
-		metrics.Client.PrecisionTiming("http.ttfb", ctx.Timer.TimeToFirstByte())
-		metrics.Client.PrecisionTiming("http.ttlb", ctx.Timer.TimeToLastByte())
+		metrics.Client.Timing("http.ttfb", ttfb)
+		metrics.Client.Timing("http.ttlb", ttlb)
 	}
 }
