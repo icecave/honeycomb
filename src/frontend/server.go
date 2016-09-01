@@ -115,7 +115,7 @@ func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 
 func (svr *Server) logRequest(ctx *requestContext) {
 	frontend := ""
-	backend := "-"
+	backend := "- -"
 	statusCode := 0
 	responseSize := "-"
 	timeToFirstByte := "-"
@@ -139,9 +139,10 @@ func (svr *Server) logRequest(ctx *requestContext) {
 	// @todo use endpoint.Name in the logs somewhere
 	if ctx.Endpoint != nil {
 		backend = fmt.Sprintf(
-			"%s://%s",
+			"%s://%s %s",
 			ctx.Endpoint.GetScheme(ctx.IsWebSocket),
 			ctx.Endpoint.Address,
+			ctx.Endpoint.Description,
 		)
 	}
 
