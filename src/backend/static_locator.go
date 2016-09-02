@@ -21,15 +21,6 @@ func (locator *StaticLocator) Locate(_ context.Context, serverName string) *Endp
 	return endpoint
 }
 
-// CanLocate checks if the given server name can be resolved to a back-end.
-func (locator *StaticLocator) CanLocate(_ context.Context, serverName string) bool {
-	locator.mutex.RLock()
-	_, ok := locator.endpoints[serverName]
-	locator.mutex.RUnlock()
-
-	return ok
-}
-
 // Add creates a new mapping from server name to back-end HTTP server.
 func (locator *StaticLocator) Add(serverName string, endpoint *Endpoint) {
 	locator.mutex.Lock()

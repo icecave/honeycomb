@@ -46,7 +46,7 @@ func (svr *Server) Run() error {
 		ErrorLog:  svr.Logger,
 	}
 
-	svr.Logger.Printf("http: Listening on %s", svr.BindAddress)
+	svr.Logger.Printf("frontend: Listening on %s", svr.BindAddress)
 	return httpServer.Serve(listener)
 }
 
@@ -104,7 +104,7 @@ func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 
 	// Make sure we can locate a back-end for the server name before we request
 	// a certificate for it ...
-	if svr.Locator.CanLocate(context.TODO(), info.ServerName) {
+	if endpoint := svr.Locator.Locate(context.TODO(), info.ServerName); endpoint != nil {
 		return svr.CertificateProvider.GetCertificate(info)
 	}
 
@@ -139,7 +139,7 @@ func (svr *Server) logRequest(ctx *requestContext) {
 	// @todo use endpoint.Name in the logs somewhere
 	if ctx.Endpoint != nil {
 		backend = fmt.Sprintf(
-			"%s://%s %s",
+			"%s://%s (%s)",
 			ctx.Endpoint.GetScheme(ctx.IsWebSocket),
 			ctx.Endpoint.Address,
 			ctx.Endpoint.Description,
@@ -161,7 +161,7 @@ func (svr *Server) logRequest(ctx *requestContext) {
 	}
 
 	svr.Logger.Printf(
-		"http: %s %s %s \"%s %s %s\" %d %s %s %s%s",
+		"frontend: %s %s %s \"%s %s %s\" %d %s %s %s%s",
 		ctx.Request.RemoteAddr,
 		frontend,
 		backend,

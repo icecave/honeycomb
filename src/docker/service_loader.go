@@ -48,10 +48,10 @@ func (loader *ServiceLoader) Load(
 			info.Endpoint, err = loader.Inspector.Inspect(ctx, &service)
 			if err == nil {
 				loader.Logger.Printf(
-					"docker: Discovered route to %s (%s) via %s",
+					"docker: Discovered route from '%s' to '%s' (%s)",
+					info.Matcher.Pattern,
 					service.Spec.Name,
 					service.Spec.TaskTemplate.ContainerSpec.Image,
-					info.Matcher.Pattern,
 				)
 
 				result = append(result, info)
@@ -60,7 +60,7 @@ func (loader *ServiceLoader) Load(
 		}
 
 		loader.Logger.Printf(
-			"docker: Can not route to %s (%s), %s",
+			"docker: Can not route to '%s' (%s), %s",
 			service.Spec.Name,
 			service.Spec.TaskTemplate.ContainerSpec.Image,
 			err,

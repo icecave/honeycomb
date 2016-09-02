@@ -39,11 +39,6 @@ func (locator *Locator) Locate(ctx context.Context, serverName string) *backend.
 	return nil
 }
 
-// CanLocate checks if the given server name can be resolved to a back-end.
-func (locator *Locator) CanLocate(ctx context.Context, serverName string) bool {
-	return locator.Locate(ctx, serverName) != nil
-}
-
 func (locator *Locator) match(serverName string) (*ServiceInfo, bool) {
 	if cache := locator.cache.Load(); cache != nil {
 		for _, info := range cache.([]ServiceInfo) {

@@ -15,14 +15,3 @@ func (locator AggregateLocator) Locate(ctx context.Context, serverName string) *
 
 	return nil
 }
-
-// CanLocate checks if the given server name can be resolved to a back-end.
-func (locator AggregateLocator) CanLocate(ctx context.Context, serverName string) bool {
-	for _, loc := range locator {
-		if loc.CanLocate(ctx, serverName) {
-			return true
-		}
-	}
-
-	return false
-}
