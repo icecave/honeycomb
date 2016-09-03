@@ -11,7 +11,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/icecave/honeycomb/src/backend"
-	"github.com/icecave/honeycomb/src/cert"
+	"github.com/icecave/honeycomb/src/frontend/cert"
 	"github.com/icecave/honeycomb/src/name"
 	"github.com/icecave/honeycomb/src/proxy"
 )

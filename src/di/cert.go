@@ -10,7 +10,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/icecave/honeycomb/src/cert"
+	"github.com/icecave/honeycomb/src/frontend/cert"
 )
 
 // CertificateProvider returns the provider used to load TLS certificates for
