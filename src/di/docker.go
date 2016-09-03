@@ -1,6 +1,9 @@
 package di
 
 import (
+	"os"
+	"time"
+
 	"github.com/docker/engine-api/client"
 	"github.com/icecave/honeycomb/src/docker"
 )
@@ -43,4 +46,20 @@ func (con *Container) ServiceInspector() *docker.ServiceInspector {
 		},
 		nil,
 	).(*docker.ServiceInspector)
+}
+
+// DockerPollInterval returns the interval at which the Docker service list is
+// queried.
+func (con *Container) DockerPollInterval() time.Duration {
+	return con.get(
+		"docker.interval",
+		func() (interface{}, error) {
+			if interval := os.Getenv("DOCKER_INTERVAL"); interval != "" {
+				return time.ParseDuration(interval)
+			}
+
+			return docker.DefaultPollInterval, nil
+		},
+		nil,
+	).(time.Duration)
 }

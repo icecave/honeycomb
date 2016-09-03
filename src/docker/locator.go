@@ -2,65 +2,129 @@ package docker
 
 import (
 	"context"
+	"log"
 	"sync/atomic"
+	"time"
 
 	"github.com/icecave/honeycomb/src/backend"
 )
 
+// DefaultPollInterval is the default interval between rebuilds of the service
+// list.
+const DefaultPollInterval = 30 * time.Second
+
 // Locator finds a back-end HTTP server based on the server name in TLS
 // requests (SNI) by querying a Docker swarm manager for services.
 type Locator struct {
-	Loader *ServiceLoader
+	PollInterval time.Duration
+	Loader       *ServiceLoader
+	Logger       *log.Logger
 
-	cache atomic.Value
-	mutex TryMutex
+	done     chan struct{}
+	services atomic.Value // []ServiceInfo
 }
 
 // NewLocator returns a new Docker locator.
-func NewLocator(loader *ServiceLoader) *Locator {
+func NewLocator(
+	pollInterval time.Duration,
+	loader *ServiceLoader,
+	logger *log.Logger,
+) *Locator {
+	if pollInterval == 0 {
+		pollInterval = DefaultPollInterval
+	}
+
 	return &Locator{
-		Loader: loader,
-		mutex:  NewTryMutex(),
+		PollInterval: pollInterval,
+		Loader:       loader,
+		Logger:       logger,
+		done:         make(chan struct{}),
 	}
 }
 
 // Locate finds the back-end HTTP server for the given server name.
 func (locator *Locator) Locate(ctx context.Context, serverName string) *backend.Endpoint {
-	if info, ok := locator.match(serverName); ok {
-		return info.Endpoint
-	}
-
-	locator.discover(ctx)
-
-	if info, ok := locator.match(serverName); ok {
-		return info.Endpoint
+	if services, ok := locator.services.Load().([]ServiceInfo); ok {
+		for _, info := range services {
+			if info.Matcher.Match(serverName) {
+				return info.Endpoint
+			}
+		}
 	}
 
 	return nil
 }
 
-func (locator *Locator) match(serverName string) (*ServiceInfo, bool) {
-	if cache := locator.cache.Load(); cache != nil {
-		for _, info := range cache.([]ServiceInfo) {
-			if info.Matcher.Match(serverName) {
-				return &info, true
+// Run polls Docker for service information until Stop() is called.
+func (locator *Locator) Run() {
+	services := locator.load()
+	locator.diff(nil, services)
+
+	for {
+		select {
+		case <-time.After(locator.PollInterval):
+			s := locator.load()
+			locator.diff(services, s)
+			services = s
+		case <-locator.done:
+			return
+		}
+	}
+}
+
+// Stop shuts down the locator and cleans up any resources used.
+func (locator *Locator) Stop() {
+	close(locator.done)
+}
+
+func (locator *Locator) load() []ServiceInfo {
+	new, err := locator.Loader.Load(context.Background())
+
+	if err == nil {
+		locator.services.Store(new)
+	} else {
+		locator.Logger.Printf("docker: %s", err)
+	}
+
+	return new
+}
+
+func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) {
+	for _, info := range old {
+		log := true
+		for _, other := range new {
+			if info.Equal(other) {
+				log = false
+				break
 			}
+		}
+
+		if log {
+			locator.Logger.Printf(
+				"docker: Removed route from '%s' to '%s' (%s)",
+				info.Matcher.Pattern,
+				info.Name,
+				info.Endpoint.Description,
+			)
 		}
 	}
 
-	return nil, false
-}
+	for _, info := range new {
+		log := true
+		for _, other := range old {
+			if info.Equal(other) {
+				log = false
+				break
+			}
+		}
 
-func (locator *Locator) discover(ctx context.Context) {
-	if !locator.mutex.TryLockOrWaitWithContext(ctx) {
-		return
-	}
-
-	defer locator.mutex.Unlock()
-
-	cache, err := locator.Loader.Load(ctx)
-
-	if err == nil {
-		locator.cache.Store(cache)
+		if log {
+			locator.Logger.Printf(
+				"docker: Added route from '%s' to '%s' (%s)",
+				info.Matcher.Pattern,
+				info.Name,
+				info.Endpoint.Description,
+			)
+		}
 	}
 }

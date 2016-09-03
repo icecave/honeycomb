@@ -24,13 +24,10 @@ func (loader *ServiceLoader) Load(
 ) ([]ServiceInfo, error) {
 	filter := filters.NewArgs()
 	filter.Add("label", matchLabel)
+	options := types.ServiceListOptions{Filter: filter}
 
-	services, err := loader.Client.ServiceList(
-		ctx,
-		types.ServiceListOptions{Filter: filter},
-	)
+	services, err := loader.Client.ServiceList(ctx, options)
 	if err != nil {
-		loader.Logger.Printf("docker: %s", err)
 		return nil, err
 	}
 
@@ -38,7 +35,7 @@ func (loader *ServiceLoader) Load(
 
 	for _, service := range services {
 		var err error
-		info := ServiceInfo{DockerService: &service}
+		info := ServiceInfo{Name: service.Spec.Name}
 
 		info.Matcher, err = backend.NewMatcher(
 			service.Spec.Annotations.Labels[matchLabel],
@@ -47,13 +44,6 @@ func (loader *ServiceLoader) Load(
 		if err == nil {
 			info.Endpoint, err = loader.Inspector.Inspect(ctx, &service)
 			if err == nil {
-				loader.Logger.Printf(
-					"docker: Discovered route from '%s' to '%s' (%s)",
-					info.Matcher.Pattern,
-					service.Spec.Name,
-					service.Spec.TaskTemplate.ContainerSpec.Image,
-				)
-
 				result = append(result, info)
 				continue
 			}

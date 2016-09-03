@@ -2,7 +2,6 @@ package di
 
 import (
 	"os"
-	"time"
 
 	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/docker"
@@ -46,22 +45,27 @@ func (con *Container) Locator() backend.Locator {
 	return con.get(
 		"server.locator",
 		func() (interface{}, error) {
-			static := &backend.StaticLocator{}
-			static.Add("static.lvh.me", &backend.Endpoint{
+			staticLocator := &backend.StaticLocator{}
+			staticLocator.Add("static.lvh.me", &backend.Endpoint{
 				Description: "local-echo-server",
 				Address:     "localhost:8080",
 			})
 
-			return &backend.CachingLocator{
-				Inner: backend.AggregateLocator{
-					static,
-					docker.NewLocator(con.ServiceLoader()),
-				},
-				PositiveTTL: 30 * time.Second,
-				NegativeTTL: 30 * time.Second,
-				Logger:      con.Logger(),
+			dockerLocator := docker.NewLocator(
+				con.DockerPollInterval(),
+				con.ServiceLoader(),
+				con.Logger(),
+			)
+			go dockerLocator.Run()
+
+			return backend.AggregateLocator{
+				staticLocator,
+				dockerLocator,
 			}, nil
 		},
-		nil,
+		func(value interface{}) error {
+			value.(backend.Locator).Close()
+			return nil
+		},
 	).(backend.Locator)
 }
