@@ -108,12 +108,12 @@ func (provider *adhocProvider) GetCertificate(ctx context.Context, serverName na
 		return certificate, nil
 	}
 
-	return provider.generate(serverName.Unicode)
+	return provider.generate(serverName)
 }
 
 // generate creates a new certificate for the given server name and stores it
 // in the cache, it also purges any expired certificates.
-func (provider *adhocProvider) generate(serverName string) (*tls.Certificate, error) {
+func (provider *adhocProvider) generate(serverName name.ServerName) (*tls.Certificate, error) {
 	// Acquire the mutex, preventing two goroutines from possibly generating the
 	// same certificate. Lock contention *may* be improved by using a seperate
 	// mutex for each server, but this is probably fine for development ...
@@ -123,7 +123,7 @@ func (provider *adhocProvider) generate(serverName string) (*tls.Certificate, er
 	// Check the cache in case another goroutine has generated the certificate
 	// while we were waiting for the mutex ...
 	cache := provider.cache.Load().(certificateCache)
-	certificate := cache[serverName]
+	certificate := cache[serverName.Unicode]
 	if certificate != nil && !provider.isStale(certificate) {
 		return certificate, nil
 	}
@@ -137,14 +137,14 @@ func (provider *adhocProvider) generate(serverName string) (*tls.Certificate, er
 	// Create a clone of the cache without expired certificates, and with the
 	// newly generated certificate ...
 	clone := provider.purge(cache)
-	clone[serverName] = certificate
+	clone[serverName.Unicode] = certificate
 
 	// Atomically replace the cache ...
 	provider.cache.Store(clone)
 
 	provider.logger.Printf(
 		"cert: Issued certificate for '%s', expires at %s, issued by '%s'",
-		serverName,
+		serverName.Unicode,
 		certificate.Leaf.NotAfter.Format(time.RFC3339),
 		certificate.Leaf.Issuer.CommonName,
 	)
@@ -156,15 +156,15 @@ func (provider *adhocProvider) generate(serverName string) (*tls.Certificate, er
 // certificates ...
 func (provider *adhocProvider) purge(cache certificateCache) certificateCache {
 	clone := certificateCache{}
-	for serverName, certificate := range cache {
+	for serverNameUnicode, certificate := range cache {
 		if provider.isStale(certificate) {
 			provider.logger.Printf(
 				"cert: Expired certificate for '%s', expired at %s",
-				serverName,
+				serverNameUnicode,
 				certificate.Leaf.NotAfter.Format(time.RFC3339),
 			)
 		} else {
-			clone[serverName] = certificate
+			clone[serverNameUnicode] = certificate
 		}
 	}
 
@@ -179,7 +179,7 @@ func (provider *adhocProvider) isStale(certificate *tls.Certificate) bool {
 }
 
 // newCertificate generates a new TLS certificate for the given server name.
-func (provider *adhocProvider) newCertificate(serverName string) (*tls.Certificate, error) {
+func (provider *adhocProvider) newCertificate(serverName name.ServerName) (*tls.Certificate, error) {
 	template, err := provider.newTemplate(serverName)
 	if err != nil {
 		return nil, err
@@ -209,7 +209,7 @@ func (provider *adhocProvider) newCertificate(serverName string) (*tls.Certifica
 }
 
 // newTemplate returns the certificate template used to make new certificates.
-func (provider *adhocProvider) newTemplate(serverName string) (*x509.Certificate, error) {
+func (provider *adhocProvider) newTemplate(serverName name.ServerName) (*x509.Certificate, error) {
 	serialNumber, err := rand.Int(
 		rand.Reader,
 		new(big.Int).Lsh(big.NewInt(1), 128),
@@ -223,12 +223,12 @@ func (provider *adhocProvider) newTemplate(serverName string) (*x509.Certificate
 
 	return &x509.Certificate{
 		SerialNumber:          serialNumber,
-		Subject:               pkix.Name{CommonName: serverName},
+		Subject:               pkix.Name{CommonName: serverName.Unicode},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
 		BasicConstraintsValid: true,
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		DNSNames:              []string{serverName},
+		DNSNames:              []string{serverName.Punycode},
 	}, nil
 }

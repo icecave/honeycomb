@@ -35,7 +35,7 @@ type CachingLocator struct {
 func (locator *CachingLocator) Locate(ctx context.Context, serverName name.ServerName) *Endpoint {
 	// Look in the cache ...
 	cache, _ := locator.cache.Load().(cacheEntries)
-	if endpoint, ok := cache.fetch(serverName.Unicode); ok {
+	if endpoint, ok := cache.fetch(serverName); ok {
 		return endpoint
 	}
 
@@ -53,7 +53,7 @@ func (locator *CachingLocator) forward(ctx context.Context, serverName name.Serv
 
 	// Check if another goroutine already added this server name to the cache ...
 	cache, _ := locator.cache.Load().(cacheEntries)
-	if endpoint, ok := cache.fetch(serverName.Unicode); ok {
+	if endpoint, ok := cache.fetch(serverName); ok {
 		return endpoint
 	}
 
@@ -65,13 +65,13 @@ func (locator *CachingLocator) forward(ctx context.Context, serverName name.Serv
 		if endpoint == nil {
 			locator.Logger.Printf(
 				"backend: Caching unresolvable route from '%s' for %s",
-				serverName,
+				serverName.Unicode,
 				ttl,
 			)
 		} else {
 			locator.Logger.Printf(
 				"backend: Caching route from '%s' to '%s' (%s) for %s",
-				serverName,
+				serverName.Unicode,
 				endpoint.Address,
 				endpoint.Description,
 				ttl,
@@ -85,7 +85,7 @@ func (locator *CachingLocator) forward(ctx context.Context, serverName name.Serv
 	}
 
 	// And store the result in the cache ...
-	cache = cache.update(serverName.Unicode, entry)
+	cache = cache.update(serverName, entry)
 	locator.cache.Store(cache)
 
 	return endpoint
@@ -113,8 +113,8 @@ type cacheEntry struct {
 	Endpoint  *Endpoint
 }
 
-func (entries cacheEntries) fetch(serverName string) (*Endpoint, bool) {
-	entry, hasEntry := entries[serverName]
+func (entries cacheEntries) fetch(serverName name.ServerName) (*Endpoint, bool) {
+	entry, hasEntry := entries[serverName.Unicode]
 
 	if hasEntry && entry.ExpiresAt.After(time.Now()) {
 		return entry.Endpoint, true
@@ -124,15 +124,15 @@ func (entries cacheEntries) fetch(serverName string) (*Endpoint, bool) {
 }
 
 func (entries cacheEntries) update(
-	serverName string,
+	serverName name.ServerName,
 	entry cacheEntry,
 ) cacheEntries {
 	now := time.Now()
-	updated := cacheEntries{serverName: entry}
+	updated := cacheEntries{serverName.Unicode: entry}
 
-	for name, entry := range entries {
-		if entry.ExpiresAt.After(now) && name != serverName {
-			updated[name] = entry
+	for serverNameUnicode, entry := range entries {
+		if entry.ExpiresAt.After(now) && serverNameUnicode != serverName.Unicode {
+			updated[serverNameUnicode] = entry
 		}
 	}
 

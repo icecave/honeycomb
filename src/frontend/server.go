@@ -92,7 +92,7 @@ func (svr *Server) locateBackend(request *http.Request) (*backend.Endpoint, erro
 
 	endpoint := svr.Locator.Locate(request.Context(), serverName)
 	if endpoint == nil {
-		return nil, fmt.Errorf("can not locate back-end for '%s'", serverName)
+		return nil, fmt.Errorf("can not locate back-end for '%s'", serverName.Unicode)
 	}
 
 	return endpoint, nil
@@ -125,7 +125,7 @@ func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 
 	// Ideally we would return an "unrecognised_name" TLS alert here, but Go's
 	// HTTP server has no way to do so, so let it fail with an "internal_error" ...
-	return nil, fmt.Errorf("can not locate back-end for '%s'", serverName)
+	return nil, fmt.Errorf("can not locate back-end for '%s'", serverName.Unicode)
 }
 
 func (svr *Server) logRequest(ctx *requestContext) {
@@ -154,7 +154,7 @@ func (svr *Server) logRequest(ctx *requestContext) {
 	// @todo use endpoint.Name in the logs somewhere
 	if ctx.Endpoint != nil {
 		backend = fmt.Sprintf(
-			"%s://%s (%s)",
+			"%s://%s %s",
 			ctx.Endpoint.GetScheme(ctx.IsWebSocket),
 			ctx.Endpoint.Address,
 			ctx.Endpoint.Description,
