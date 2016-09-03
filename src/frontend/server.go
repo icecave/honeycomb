@@ -102,10 +102,17 @@ func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 		return nil, fmt.Errorf("no SNI information")
 	}
 
-	// Make sure we can locate a back-end for the server name before we request
-	// a certificate for it ...
-	if endpoint := svr.Locator.Locate(context.TODO(), info.ServerName); endpoint != nil {
-		return svr.CertificateProvider.GetCertificate(info)
+	// First try to find an existing certificate ...
+	certificate, err := svr.CertificateProvider.GetExistingCertificate(serverName)
+	if err != nil {
+		return nil, err
+	} else if certificate != nil {
+		return certificate, nil
+	}
+
+	// If we can't find one, make sure we at least have an endpoint to route to ...
+	if endpoint := svr.Locator.Locate(context.TODO(), serverName); endpoint != nil {
+		return svr.CertificateProvider.GetCertificate(serverName)
 	}
 
 	// Ideally we would return an "unrecognised_name" TLS alert here, but Go's

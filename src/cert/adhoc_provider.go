@@ -79,22 +79,36 @@ type adhocProvider struct {
 
 type certificateCache map[string]*tls.Certificate
 
-// GetCertificate returns the certificate for the given TLS request. If the
-// certificate is not available in the cache, a new one is generated.
-func (provider *adhocProvider) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+// GetExistingCertificate returns the certificate for the given server name,
+// if it has already been generated. If the certificate has not been
+// generated the returned certificate and error are both nil.
+func (provider *adhocProvider) GetExistingCertificate(serverName string) (*tls.Certificate, error) {
 	// Normalize the server name ...
-	serverName := strings.ToLower(info.ServerName)
+	serverName = strings.ToLower(serverName)
 
 	// Load the cache object atomically ...
 	cache := provider.cache.Load().(certificateCache)
 	certificate := cache[serverName]
 
+	// Return nothing if the certificate is not found or otherwise expired ...
+	if certificate == nil || provider.isStale(certificate) {
+		return nil, nil
+	}
+
 	// Return the certificate if it's present and not expired ...
-	if certificate != nil && !provider.isStale(certificate) {
+	return certificate, nil
+}
+
+// GetCertificate returns the certificate for the given server name. If the
+// certificate doe not exist, it attempts to generate one.
+func (provider *adhocProvider) GetCertificate(serverName string) (*tls.Certificate, error) {
+	certificate, err := provider.GetExistingCertificate(serverName)
+	if err != nil {
+		return nil, err
+	} else if certificate != nil {
 		return certificate, nil
 	}
 
-	// Generate a new certificate ...
 	return provider.generate(serverName)
 }
 

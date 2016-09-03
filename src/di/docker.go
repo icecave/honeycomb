@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/docker/engine-api/client"
+	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/docker"
 )
 
@@ -62,4 +63,27 @@ func (con *Container) DockerPollInterval() time.Duration {
 		},
 		nil,
 	).(time.Duration)
+}
+
+// DockerLocator returns the back-end locator used to resolve server names to
+// Docker services.
+func (con *Container) DockerLocator() backend.Locator {
+	return con.get(
+		"docker.locator",
+		func() (interface{}, error) {
+			locator := docker.NewLocator(
+				con.DockerPollInterval(),
+				con.ServiceLoader(),
+				con.Logger(),
+			)
+
+			go locator.Run()
+
+			return locator, nil
+		},
+		func(value interface{}) error {
+			value.(*docker.Locator).Stop()
+			return nil
+		},
+	).(backend.Locator)
 }
