@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/icecave/honeycomb/src/backend"
+	"github.com/icecave/honeycomb/src/name"
 )
 
 // DefaultPollInterval is the default interval between rebuilds of the service
@@ -43,7 +44,7 @@ func NewLocator(
 }
 
 // Locate finds the back-end HTTP server for the given server name.
-func (locator *Locator) Locate(ctx context.Context, serverName string) *backend.Endpoint {
+func (locator *Locator) Locate(ctx context.Context, serverName name.ServerName) *backend.Endpoint {
 	if services, ok := locator.services.Load().([]ServiceInfo); ok {
 		for _, info := range services {
 			if info.Matcher.Match(serverName) {

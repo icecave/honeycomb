@@ -1,6 +1,7 @@
 package cert
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -8,10 +9,11 @@ import (
 	"crypto/x509/pkix"
 	"log"
 	"math/big"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/icecave/honeycomb/src/name"
 )
 
 // NewAdhocProvider returns a certificate provider that generates new
@@ -82,13 +84,10 @@ type certificateCache map[string]*tls.Certificate
 // GetExistingCertificate returns the certificate for the given server name,
 // if it has already been generated. If the certificate has not been
 // generated the returned certificate and error are both nil.
-func (provider *adhocProvider) GetExistingCertificate(serverName string) (*tls.Certificate, error) {
-	// Normalize the server name ...
-	serverName = strings.ToLower(serverName)
-
+func (provider *adhocProvider) GetExistingCertificate(_ context.Context, serverName name.ServerName) (*tls.Certificate, error) {
 	// Load the cache object atomically ...
 	cache := provider.cache.Load().(certificateCache)
-	certificate := cache[serverName]
+	certificate := cache[serverName.Unicode]
 
 	// Return nothing if the certificate is not found or otherwise expired ...
 	if certificate == nil || provider.isStale(certificate) {
@@ -101,15 +100,15 @@ func (provider *adhocProvider) GetExistingCertificate(serverName string) (*tls.C
 
 // GetCertificate returns the certificate for the given server name. If the
 // certificate doe not exist, it attempts to generate one.
-func (provider *adhocProvider) GetCertificate(serverName string) (*tls.Certificate, error) {
-	certificate, err := provider.GetExistingCertificate(serverName)
+func (provider *adhocProvider) GetCertificate(ctx context.Context, serverName name.ServerName) (*tls.Certificate, error) {
+	certificate, err := provider.GetExistingCertificate(ctx, serverName)
 	if err != nil {
 		return nil, err
 	} else if certificate != nil {
 		return certificate, nil
 	}
 
-	return provider.generate(serverName)
+	return provider.generate(serverName.Unicode)
 }
 
 // generate creates a new certificate for the given server name and stores it

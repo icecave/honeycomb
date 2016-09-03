@@ -1,9 +1,9 @@
-package backend_test
+package name_test
 
 import (
 	"strings"
 
-	"github.com/icecave/honeycomb/src/backend"
+	"github.com/icecave/honeycomb/src/name"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -14,7 +14,7 @@ var _ = Describe("Matcher", func() {
 		DescribeTable(
 			"accepts valid patterns",
 			func(pattern string) {
-				subject, err := backend.NewMatcher(pattern)
+				subject, err := name.NewMatcher(pattern)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(subject).ShouldNot(BeNil())
 				Expect(subject.Pattern).To(Equal(pattern))
@@ -30,7 +30,7 @@ var _ = Describe("Matcher", func() {
 		DescribeTable(
 			"it rejects patterns with invalid server names",
 			func(pattern string) {
-				subject, err := backend.NewMatcher(pattern)
+				subject, err := name.NewMatcher(pattern)
 				Expect(err).To(MatchError("'" + pattern + "' is not a valid server name pattern"))
 				Expect(subject).Should(BeNil())
 			},
@@ -53,8 +53,8 @@ var _ = Describe("Matcher", func() {
 		DescribeTable(
 			"it returns true when passed a matching server name",
 			func(pattern, serverName string) {
-				subject, _ := backend.NewMatcher(pattern)
-				Expect(subject.Match(serverName)).To(BeTrue())
+				subject, _ := name.NewMatcher(pattern)
+				Expect(subject.Match(name.NormalizeServerName(serverName))).To(BeTrue())
 			},
 			Entry("exact match", "host.dømåin-name.tld", "host.dømåin-name.tld"),
 			Entry("wildcard prefix", "*.dømåin-name.tld", "host.dømåin-name.tld"),
@@ -67,28 +67,14 @@ var _ = Describe("Matcher", func() {
 		DescribeTable(
 			"it returns false when passed a non-matching server name",
 			func(pattern, serverName string) {
-				subject, _ := backend.NewMatcher(pattern)
-				Expect(subject.Match(serverName)).To(BeFalse())
+				subject, _ := name.NewMatcher(pattern)
+				Expect(subject.Match(name.NormalizeServerName(serverName))).To(BeFalse())
 			},
 			Entry("exact match", "host.dømåin-name.tld", "host.different.tld"),
 			Entry("wildcard prefix", "*.dømåin-name.tld", "host.different.tld"),
 			Entry("wildcard suffix", "host.*", "different.dømåin-name.tld"),
 			Entry("wildcard", "*.dømåin-name.*", "host.different.tld"),
 			Entry("catch all with dot", "*.*", "no-dot"),
-		)
-
-		DescribeTable(
-			"it returns false when passed an empty string",
-			func(pattern string) {
-				subject, _ := backend.NewMatcher(pattern)
-				Expect(subject.Match("")).To(BeFalse())
-			},
-			Entry("exact match", "host.dømåin-name.tld"),
-			Entry("wildcard prefix", "*.dømåin-name.tld"),
-			Entry("wildcard suffix", "host.*"),
-			Entry("wildcard", "*.dømåin-name.*"),
-			Entry("catch all with dot", "*.*"),
-			Entry("catch all", "*"),
 		)
 	})
 })

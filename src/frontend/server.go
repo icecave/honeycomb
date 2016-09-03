@@ -9,11 +9,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"golang.org/x/net/idna"
-
 	"github.com/gorilla/websocket"
 	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/cert"
+	"github.com/icecave/honeycomb/src/name"
 	"github.com/icecave/honeycomb/src/proxy"
 )
 
@@ -81,9 +80,14 @@ func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http
 }
 
 func (svr *Server) locateBackend(request *http.Request) (*backend.Endpoint, error) {
-	serverName, _, err := net.SplitHostPort(request.Host)
+	host, _, err := net.SplitHostPort(request.Host)
 	if err != nil {
-		serverName = request.Host
+		host = request.Host
+	}
+
+	serverName, err := name.TryNormalizeServerName(host)
+	if err != nil {
+		return nil, err
 	}
 
 	endpoint := svr.Locator.Locate(request.Context(), serverName)
@@ -95,15 +99,19 @@ func (svr *Server) locateBackend(request *http.Request) (*backend.Endpoint, erro
 }
 
 func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	serverName, err := idna.ToUnicode(info.ServerName)
-	if err != nil {
-		return nil, err
-	} else if serverName == "" {
+	if info.ServerName == "" {
 		return nil, fmt.Errorf("no SNI information")
 	}
 
+	serverName, err := name.TryNormalizeServerName(info.ServerName)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.TODO()
+
 	// First try to find an existing certificate ...
-	certificate, err := svr.CertificateProvider.GetExistingCertificate(serverName)
+	certificate, err := svr.CertificateProvider.GetExistingCertificate(ctx, serverName)
 	if err != nil {
 		return nil, err
 	} else if certificate != nil {
@@ -111,8 +119,8 @@ func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 	}
 
 	// If we can't find one, make sure we at least have an endpoint to route to ...
-	if endpoint := svr.Locator.Locate(context.TODO(), serverName); endpoint != nil {
-		return svr.CertificateProvider.GetCertificate(serverName)
+	if endpoint := svr.Locator.Locate(ctx, serverName); endpoint != nil {
+		return svr.CertificateProvider.GetCertificate(ctx, serverName)
 	}
 
 	// Ideally we would return an "unrecognised_name" TLS alert here, but Go's

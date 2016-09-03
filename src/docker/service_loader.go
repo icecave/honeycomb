@@ -7,7 +7,7 @@ import (
 	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	"github.com/docker/engine-api/types/filters"
-	"github.com/icecave/honeycomb/src/backend"
+	"github.com/icecave/honeycomb/src/name"
 )
 
 // ServiceLoader loads information about Docker services that are marked as
@@ -37,7 +37,7 @@ func (loader *ServiceLoader) Load(
 		var err error
 		info := ServiceInfo{Name: service.Spec.Name}
 
-		info.Matcher, err = backend.NewMatcher(
+		info.Matcher, err = name.NewMatcher(
 			service.Spec.Annotations.Labels[matchLabel],
 		)
 

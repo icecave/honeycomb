@@ -3,10 +3,11 @@ package backend
 import (
 	"context"
 	"log"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/icecave/honeycomb/src/name"
 )
 
 // CachingLocator wraps another locator to provide basic caching functionality.
@@ -31,30 +32,28 @@ type CachingLocator struct {
 }
 
 // Locate finds the back-end HTTP server for the given server name.
-func (locator *CachingLocator) Locate(ctx context.Context, serverName string) *Endpoint {
-	serverName = strings.ToLower(serverName)
-
+func (locator *CachingLocator) Locate(ctx context.Context, serverName name.ServerName) *Endpoint {
 	// Look in the cache ...
 	cache, _ := locator.cache.Load().(cacheEntries)
-	if endpoint, ok := cache.fetch(serverName); ok {
+	if endpoint, ok := cache.fetch(serverName.Unicode); ok {
 		return endpoint
 	}
 
 	// The server name is not in the cache, forward it to the inner locator ...
 	if locator.Logger != nil {
-		locator.Logger.Printf("backend: Cache miss for '%s'", serverName)
+		locator.Logger.Printf("backend: Cache miss for '%s'", serverName.Unicode)
 	}
 
 	return locator.forward(ctx, serverName)
 }
 
-func (locator *CachingLocator) forward(ctx context.Context, serverName string) *Endpoint {
+func (locator *CachingLocator) forward(ctx context.Context, serverName name.ServerName) *Endpoint {
 	locator.mutex.Lock()
 	defer locator.mutex.Unlock()
 
 	// Check if another goroutine already added this server name to the cache ...
 	cache, _ := locator.cache.Load().(cacheEntries)
-	if endpoint, ok := cache.fetch(serverName); ok {
+	if endpoint, ok := cache.fetch(serverName.Unicode); ok {
 		return endpoint
 	}
 
@@ -86,7 +85,7 @@ func (locator *CachingLocator) forward(ctx context.Context, serverName string) *
 	}
 
 	// And store the result in the cache ...
-	cache = cache.update(serverName, entry)
+	cache = cache.update(serverName.Unicode, entry)
 	locator.cache.Store(cache)
 
 	return endpoint

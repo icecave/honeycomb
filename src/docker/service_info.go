@@ -1,14 +1,18 @@
 package docker
 
-import "github.com/icecave/honeycomb/src/backend"
+import (
+	"github.com/icecave/honeycomb/src/backend"
+	"github.com/icecave/honeycomb/src/name"
+)
 
 // ServiceInfo meta-data and a reference to the docker service used as a back-end.
 type ServiceInfo struct {
 	Name     string
-	Matcher  *backend.Matcher
+	Matcher  *name.Matcher
 	Endpoint *backend.Endpoint
 }
 
+// Equal checks if two ServiceInfo structs represent the same service.
 func (info ServiceInfo) Equal(other ServiceInfo) bool {
 	return info.Name == other.Name &&
 		*info.Matcher == *other.Matcher &&
