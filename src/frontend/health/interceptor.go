@@ -7,6 +7,8 @@ import (
 	"github.com/icecave/honeycomb/src/name"
 )
 
+const healthCheckPath = "/health"
+
 // Interceptor intercepts incoming requests to https://localhost/health and
 // returns a basic health status of the server, suitable for use with Docker
 // health checks.
@@ -26,11 +28,12 @@ func (in *Interceptor) Provides(serverName name.ServerName) bool {
 func (in *Interceptor) Intercept(ctx *frontend.RequestContext) {
 	if !in.Provides(ctx.ServerName) {
 		return
-	} else if ctx.Request.URL.Path != "/health" {
+	} else if ctx.Request.URL.Path != healthCheckPath {
 		return
 	}
 
 	ctx.Intercepted = true
+	ctx.SuppressLogs = true
 	ctx.Error = nil
 
 	// The fact that this request made it through is enough to verify that the

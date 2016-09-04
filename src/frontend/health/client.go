@@ -23,7 +23,7 @@ func (client *Client) Check() Status {
 	var url url.URL
 	url.Scheme = "https"
 	url.Host = net.JoinHostPort(host, port)
-	url.Path = "/health"
+	url.Path = healthCheckPath
 
 	transport := http.Transport{
 		TLSClientConfig: &tls.Config{

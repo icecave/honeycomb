@@ -66,7 +66,7 @@ func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http
 	ctx.Writer.OnRespond = ctx.Timer.MarkResponded
 	ctx.Writer.OnHijack = func() {
 		ctx.Timer.MarkResponded()
-		svr.Logger.Printf("frontend: %s", ctx)
+		ctx.Log(svr.Logger)
 	}
 
 	ctx.IsWebSocket = websocket.IsWebSocketUpgrade(request)
@@ -99,7 +99,7 @@ func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http
 	}
 
 	ctx.Timer.MarkCompleted()
-	svr.Logger.Printf("frontend: %s", ctx)
+	ctx.Log(svr.Logger)
 }
 
 func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {

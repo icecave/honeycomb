@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -11,14 +12,15 @@ import (
 )
 
 type RequestContext struct {
-	ServerName  name.ServerName
-	Writer      proxy.ResponseWriter
-	Request     *http.Request
-	Intercepted bool
-	IsWebSocket bool
-	Timer       requestTimer
-	Endpoint    *backend.Endpoint
-	Error       error
+	ServerName   name.ServerName
+	Writer       proxy.ResponseWriter
+	Request      *http.Request
+	Intercepted  bool
+	IsWebSocket  bool
+	SuppressLogs bool
+	Timer        requestTimer
+	Endpoint     *backend.Endpoint
+	Error        error
 }
 
 // String returns a representation of the request context suitable for logging.
@@ -83,4 +85,12 @@ func (ctx *RequestContext) String() string {
 		totalTime,
 		info,
 	)
+}
+
+// Log writes a line to the given logger for this request, if logging as not
+// been suppressed.
+func (ctx *RequestContext) Log(logger *log.Logger) {
+	if !ctx.SuppressLogs {
+		logger.Printf("frontend: %s", ctx)
+	}
 }
