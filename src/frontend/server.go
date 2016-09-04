@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/websocket"
 	"github.com/icecave/honeycomb/src/backend"
@@ -36,6 +35,7 @@ func (svr *Server) Run() error {
 
 	listener, err := tls.Listen("tcp", svr.BindAddress, tlsConfig)
 	if err != nil {
+		svr.Logger.Printf("frontend: %s", err)
 		return err
 	}
 
@@ -46,14 +46,20 @@ func (svr *Server) Run() error {
 	}
 
 	svr.Logger.Printf("frontend: Listening on %s", svr.BindAddress)
-	return httpServer.Serve(listener)
+	err = httpServer.Serve(listener)
+	if err != nil {
+		svr.Logger.Printf("frontend: %s", err)
+		return err
+	}
+
+	return nil
 }
 
 // forwardRequest is the server's internal request handler
 func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http.Request) {
-	var ctx requestContext
-	ctx.Request = request
+	ctx := &requestContext{}
 	ctx.Timer.MarkReceived()
+	ctx.Request = request
 	ctx.IsWebSocket = websocket.IsWebSocketUpgrade(request)
 	ctx.Endpoint, ctx.Error = svr.locateBackend(request)
 
@@ -61,10 +67,10 @@ func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http
 	ctx.Writer.OnRespond = ctx.Timer.MarkResponded
 	ctx.Writer.OnHijack = func() {
 		ctx.Timer.MarkResponded()
-		svr.logRequest(&ctx)
+		svr.Logger.Printf("frontend: %s", ctx)
 	}
 
-	svr.Metrics.StartRequest(&ctx)
+	svr.Metrics.StartRequest(ctx)
 
 	if ctx.Error != nil {
 		http.Error(&ctx.Writer, "Service Unavailable", http.StatusServiceUnavailable)
@@ -75,8 +81,8 @@ func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http
 	}
 
 	ctx.Timer.MarkCompleted()
-	svr.logRequest(&ctx)
-	svr.Metrics.EndRequest(&ctx)
+	svr.Logger.Printf("frontend: %s", ctx)
+	svr.Metrics.EndRequest(ctx)
 }
 
 func (svr *Server) locateBackend(request *http.Request) (*backend.Endpoint, error) {
@@ -126,67 +132,4 @@ func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 	// Ideally we would return an "unrecognised_name" TLS alert here, but Go's
 	// HTTP server has no way to do so, so let it fail with an "internal_error" ...
 	return nil, fmt.Errorf("can not locate back-end for '%s'", serverName.Unicode)
-}
-
-func (svr *Server) logRequest(ctx *requestContext) {
-	frontend := ""
-	backend := "- -"
-	statusCode := 0
-	responseSize := "-"
-	timeToFirstByte := "-"
-	totalTime := "-"
-	info := ""
-
-	if ctx.Error != nil {
-		info = ctx.Error.Error()
-	}
-
-	if ctx.IsWebSocket {
-		frontend = "wss://" + ctx.Request.Host
-		statusCode = http.StatusSwitchingProtocols
-		responseSize = "-"
-	} else {
-		frontend = "https://" + ctx.Request.Host
-		statusCode = ctx.Writer.StatusCode
-		responseSize = strconv.Itoa(ctx.Writer.Size)
-	}
-
-	// @todo use endpoint.Name in the logs somewhere
-	if ctx.Endpoint != nil {
-		backend = fmt.Sprintf(
-			"%s://%s %s",
-			ctx.Endpoint.GetScheme(ctx.IsWebSocket),
-			ctx.Endpoint.Address,
-			ctx.Endpoint.Description,
-		)
-	}
-
-	if ctx.Timer.HasResponded() {
-		timeToFirstByte = ctx.Timer.TimeToFirstByte().String()
-
-		if ctx.Timer.IsComplete() {
-			totalTime = ctx.Timer.TimeToLastByte().String()
-		} else if ctx.IsWebSocket && info == "" {
-			info = "connection established"
-		}
-	}
-
-	if info != "" {
-		info = fmt.Sprintf(" (%s)", info)
-	}
-
-	svr.Logger.Printf(
-		"frontend: %s %s %s \"%s %s %s\" %d %s %s %s%s",
-		ctx.Request.RemoteAddr,
-		frontend,
-		backend,
-		ctx.Request.Method,
-		ctx.Request.URL,
-		ctx.Request.Proto,
-		statusCode,
-		responseSize,
-		timeToFirstByte,
-		totalTime,
-		info,
-	)
 }
