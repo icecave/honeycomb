@@ -6,7 +6,7 @@
 FROM alpine:3.4
 MAINTAINER James Harris <james.harris@icecave.com.au>
 
-# Likewise, we can swtich back to the "exec" form of HEALTHCHECK once the above
+# Likewise, we can switch back to the "exec" form of HEALTHCHECK once the above
 # fix is released.
 HEALTHCHECK --interval=15s --timeout=500ms CMD honeycomb -check
 ENTRYPOINT ["honeycomb"]
