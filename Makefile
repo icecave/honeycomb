@@ -3,7 +3,8 @@
 .PHONY: run
 run: build artifacts/certificates
 	CERTIFICATE_PATH=artifacts/certificates \
-		$(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb
+		$(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb \
+		$$HONEYCOMB_ARGS
 
 .PHONY: docker
 docker: artifacts/docker.touch
