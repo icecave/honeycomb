@@ -143,7 +143,7 @@ func (provider *adhocProvider) generate(serverName name.ServerName) (*tls.Certif
 	provider.cache.Store(clone)
 
 	provider.logger.Printf(
-		"cert: Issued certificate for '%s', expires at %s, issued by '%s'",
+		"frontend: Issued certificate for '%s', expires at %s, issued by '%s'",
 		serverName.Unicode,
 		certificate.Leaf.NotAfter.Format(time.RFC3339),
 		certificate.Leaf.Issuer.CommonName,
@@ -159,7 +159,7 @@ func (provider *adhocProvider) purge(cache certificateCache) certificateCache {
 	for serverNameUnicode, certificate := range cache {
 		if provider.isStale(certificate) {
 			provider.logger.Printf(
-				"cert: Expired certificate for '%s', expired at %s",
+				"frontend: Expired certificate for '%s', expired at %s",
 				serverNameUnicode,
 				certificate.Leaf.NotAfter.Format(time.RFC3339),
 			)
