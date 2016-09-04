@@ -22,6 +22,7 @@ type Server struct {
 	CertificateProvider cert.Provider
 	HTTPProxy           proxy.Proxy
 	WebSocketProxy      proxy.Proxy
+	Interceptor         Interceptor
 	Logger              *log.Logger
 	Metrics             Metrics
 }
@@ -57,12 +58,10 @@ func (svr *Server) Run() error {
 
 // forwardRequest is the server's internal request handler
 func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http.Request) {
-	ctx := &requestContext{}
+	ctx := &RequestContext{}
 	ctx.Timer.MarkReceived()
-	ctx.Request = request
-	ctx.IsWebSocket = websocket.IsWebSocketUpgrade(request)
-	ctx.Endpoint, ctx.Error = svr.locateBackend(request)
 
+	ctx.Request = request
 	ctx.Writer.Inner = innerWriter
 	ctx.Writer.OnRespond = ctx.Timer.MarkResponded
 	ctx.Writer.OnHijack = func() {
@@ -70,38 +69,37 @@ func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http
 		svr.Logger.Printf("frontend: %s", ctx)
 	}
 
-	svr.Metrics.StartRequest(ctx)
+	ctx.IsWebSocket = websocket.IsWebSocketUpgrade(request)
+	ctx.ServerName, ctx.Error = serverNameFromRequest(request)
 
-	if ctx.Error != nil {
-		http.Error(&ctx.Writer, "Service Unavailable", http.StatusServiceUnavailable)
-	} else if ctx.IsWebSocket {
-		ctx.Error = svr.WebSocketProxy.ForwardRequest(ctx.Endpoint, &ctx.Writer, ctx.Request)
-	} else {
-		ctx.Error = svr.HTTPProxy.ForwardRequest(ctx.Endpoint, &ctx.Writer, ctx.Request)
+	// The server name was normalized successfully ...
+	if ctx.Error == nil {
+		ctx.Endpoint = svr.Locator.Locate(request.Context(), ctx.ServerName)
+
+		if ctx.Endpoint == nil {
+			ctx.Error = fmt.Errorf("can not locate back-end for '%s'", ctx.ServerName.Unicode)
+		}
+
+		if svr.Interceptor != nil {
+			svr.Interceptor.Intercept(ctx)
+		}
+
+		if !ctx.Intercepted {
+			svr.Metrics.StartRequest(ctx)
+			defer svr.Metrics.EndRequest(ctx)
+
+			if ctx.Error != nil {
+				http.Error(&ctx.Writer, "Service Unavailable", http.StatusServiceUnavailable)
+			} else if ctx.IsWebSocket {
+				ctx.Error = svr.WebSocketProxy.ForwardRequest(ctx.Endpoint, &ctx.Writer, ctx.Request)
+			} else {
+				ctx.Error = svr.HTTPProxy.ForwardRequest(ctx.Endpoint, &ctx.Writer, ctx.Request)
+			}
+		}
 	}
 
 	ctx.Timer.MarkCompleted()
 	svr.Logger.Printf("frontend: %s", ctx)
-	svr.Metrics.EndRequest(ctx)
-}
-
-func (svr *Server) locateBackend(request *http.Request) (*backend.Endpoint, error) {
-	host, _, err := net.SplitHostPort(request.Host)
-	if err != nil {
-		host = request.Host
-	}
-
-	serverName, err := name.TryNormalizeServerName(host)
-	if err != nil {
-		return nil, err
-	}
-
-	endpoint := svr.Locator.Locate(request.Context(), serverName)
-	if endpoint == nil {
-		return nil, fmt.Errorf("can not locate back-end for '%s'", serverName.Unicode)
-	}
-
-	return endpoint, nil
 }
 
 func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
@@ -124,12 +122,27 @@ func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 		return certificate, nil
 	}
 
-	// If we can't find one, make sure we at least have an endpoint to route to ...
+	// If we can't find one, make sure there is an endpoint to route to ...
 	if endpoint := svr.Locator.Locate(ctx, serverName); endpoint != nil {
+		return svr.CertificateProvider.GetCertificate(ctx, serverName)
+
+	}
+
+	// Or otherwise that the interceptor provides the services ...
+	if svr.Interceptor != nil && svr.Interceptor.Provides(serverName) {
 		return svr.CertificateProvider.GetCertificate(ctx, serverName)
 	}
 
 	// Ideally we would return an "unrecognised_name" TLS alert here, but Go's
 	// HTTP server has no way to do so, so let it fail with an "internal_error" ...
 	return nil, fmt.Errorf("can not locate back-end for '%s'", serverName.Unicode)
+}
+
+func serverNameFromRequest(request *http.Request) (name.ServerName, error) {
+	host, _, err := net.SplitHostPort(request.Host)
+	if err != nil {
+		host = request.Host
+	}
+
+	return name.TryNormalizeServerName(host)
 }

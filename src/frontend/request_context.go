@@ -6,12 +6,15 @@ import (
 	"strconv"
 
 	"github.com/icecave/honeycomb/src/backend"
+	"github.com/icecave/honeycomb/src/name"
 	"github.com/icecave/honeycomb/src/proxy"
 )
 
-type requestContext struct {
+type RequestContext struct {
+	ServerName  name.ServerName
 	Writer      proxy.ResponseWriter
 	Request     *http.Request
+	Intercepted bool
 	IsWebSocket bool
 	Timer       requestTimer
 	Endpoint    *backend.Endpoint
@@ -19,7 +22,7 @@ type requestContext struct {
 }
 
 // String returns a representation of the request context suitable for logging.
-func (ctx *requestContext) String() string {
+func (ctx *RequestContext) String() string {
 	frontend := ""
 	backend := "- -"
 	statusCode := 0

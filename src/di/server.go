@@ -5,6 +5,7 @@ import (
 
 	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/frontend"
+	"github.com/icecave/honeycomb/src/frontend/health"
 	"github.com/icecave/honeycomb/src/proxy"
 )
 
@@ -20,6 +21,7 @@ func (con *Container) Server() *frontend.Server {
 				CertificateProvider: con.CertificateProvider(),
 				HTTPProxy:           proxy.NewHTTPProxy(logger),
 				WebSocketProxy:      proxy.NewWebSocketProxy(logger),
+				Interceptor:         &health.Interceptor{},
 				Logger:              logger,
 				Metrics: &frontend.StatsDMetrics{
 					Client: con.StatsDClient(),
@@ -57,4 +59,16 @@ func (con *Container) Locator() backend.Locator {
 		},
 		nil,
 	).(backend.Locator)
+}
+
+// HealthChecker returns the health-checker that is to be used to query the
+// server's health.
+func (con *Container) HealthChecker() health.Checker {
+	return con.get(
+		"docker.health-checker",
+		func() (interface{}, error) {
+			return &health.Client{Address: con.BindAddress()}, nil
+		},
+		nil,
+	).(health.Checker)
 }

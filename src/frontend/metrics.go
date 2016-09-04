@@ -8,15 +8,15 @@ import (
 )
 
 type Metrics interface {
-	StartRequest(ctx *requestContext)
-	EndRequest(ctx *requestContext)
+	StartRequest(ctx *RequestContext)
+	EndRequest(ctx *RequestContext)
 }
 
 type StatsDMetrics struct {
 	Client *statsd.Client
 }
 
-func (metrics *StatsDMetrics) StartRequest(ctx *requestContext) {
+func (metrics *StatsDMetrics) StartRequest(ctx *RequestContext) {
 	if ctx.IsWebSocket {
 		metrics.Client.Increment("websocket.requests")
 	} else {
@@ -27,7 +27,7 @@ func (metrics *StatsDMetrics) StartRequest(ctx *requestContext) {
 	}
 }
 
-func (metrics *StatsDMetrics) EndRequest(ctx *requestContext) {
+func (metrics *StatsDMetrics) EndRequest(ctx *RequestContext) {
 	ttfb := int(ctx.Timer.TimeToFirstByte() / time.Millisecond)
 	ttlb := int(ctx.Timer.TimeToLastByte() / time.Millisecond)
 

@@ -44,7 +44,7 @@ func (proxy *httpProxy) ForwardRequest(
 	// @todo get access to the internal error to send the appropriate code and/or
 	// get rid of httputil.ReverseProxy entirely :/
 	if writer.StatusCode == http.StatusBadGateway && writer.Size == 0 {
-		io.WriteString(writer, "Bad Gateway")
+		io.WriteString(writer, http.StatusText(http.StatusBadGateway))
 	}
 
 	return nil
