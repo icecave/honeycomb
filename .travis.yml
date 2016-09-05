@@ -10,3 +10,14 @@ matrix:
 services:
 - docker
 script: make ci
+before_deploy: docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+deploy:
+  provider: script
+  script: TAG="$TRAVIS_TAG" make deploy
+  skip_cleanup: true
+  go: '1.7'
+  on:
+    tags: true
+env:
+  global:
+    secure: QRW2BZFkWl23EbhL1ECApi2B+4ozoiYHJ6KsoUhyEruL1lCY6RL7DJPc3q35V7ArCvF+QFsZLzruZ3LyxwpaqmceCnNWdEvbZ93PbI41T1dFGG21m1sqnSIHSeOs6cM6GFdt8kkZuNWB50EMuTAmDH+22nhVs1lYcnbrTs4l/uoepN1WVFHD9Dz2x8WSysMk1SixcdpoRij0Doa/uK+An8vbTi2I7NSow8/8F1MYuEAnWAjTTZG2J+6B+OmWqsczeXP4o9cnFSKpmLjqvpQYDrCl7nr+RqHvnYtYAbji1VurAQqv0sJ89BO79BM/yKhgeE8PIdxTyfjLApUEp+zMTGri96Xm8Xq8NlSNwjU0RMd8meQoT33Vz8UYONzK+/XcBXEnNK4SzjF1/a1xAD66VJioVoWkgz6jo2gKJ3irOXo+qUDRfJIhBs3kmqVJeDmbfFbQf8Ii2sSavacg9bth0flBNpxkJH+6sO3vj/ex4tavN9TF/fhW+F2qrND4VuluwlHhkWpIDqk4KBDF32/Jp0WTItj3v7SO9bbICfP4Nv2CRxmB94KTCNHNuD67VpCVl3prJ7bG6ibps4FZeUKpvRTZff7IYHp7OIdQ2iygh1OpyeuCoF0lho8gTDwIgnR8hVDJkrAQrdZP7EAihhTr0RsDppzBA8Y82f//qa0Dym8=

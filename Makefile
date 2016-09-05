@@ -1,5 +1,8 @@
 -include artifacts/build/Makefile.in
 
+DOCKER_REPO ?= icecave/honeycomb
+DOCKER_TAG  ?= dev
+
 .PHONY: run
 run: build artifacts/certificates
 	CERTIFICATE_PATH=artifacts/certificates \
@@ -8,6 +11,10 @@ run: build artifacts/certificates
 
 .PHONY: docker
 docker: artifacts/docker.touch
+
+.PHONY: deploy
+deploy: docker
+	docker push "$(DOCKER_REPO):$(DOCKER_TAG)"
 
 artifacts/certificates:
 	@mkdir -p "$@"
@@ -24,7 +31,7 @@ artifacts/certificates:
 		-subj "/CN=Honeycomb Development CA"
 
 artifacts/docker.touch: Dockerfile $(BUILD_PATH)/release/linux/amd64/honeycomb artifacts/certificates
-	docker build -t honeycomb:dev .
+	docker build -t "$(DOCKER_REPO):$(DOCKER_TAG)" .
 	touch "$@"
 
 artifacts/build/Makefile.in:
