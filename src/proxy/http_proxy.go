@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	"io"
+	"context"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -12,16 +12,19 @@ import (
 // NewHTTPProxy creates a new proxy that forwards non-websocket requests to a
 // back-end server.
 func NewHTTPProxy(logger *log.Logger) Proxy {
-	return &httpProxy{
-		reverseProxy: httputil.ReverseProxy{
-			Director: func(*http.Request) {},
-			ErrorLog: logger,
-		},
+	proxy := &httpProxy{transport: http.DefaultTransport}
+	proxy.reverseProxy = httputil.ReverseProxy{
+		Director:  func(*http.Request) {},
+		ErrorLog:  logger,
+		Transport: proxy,
 	}
+
+	return proxy
 }
 
 type httpProxy struct {
 	reverseProxy httputil.ReverseProxy
+	transport    http.RoundTripper
 }
 
 // Serve forwards an HTTP request to a specific back-end server.
@@ -34,18 +37,33 @@ func (proxy *httpProxy) ForwardRequest(
 	request.URL.Host = endpoint.Address
 	request.URL.Scheme = endpoint.GetScheme(false)
 
+	// Store the writer on the request so we can use it in RoundTrip() ...
+	request = request.WithContext(
+		context.WithValue(
+			request.Context(),
+			"writer",
+			writer,
+		),
+	)
+
 	// @todo unify X-Forwarded-* headers with websocket proxy, this may not be
 	// possible with httputil.ReverseProxy.
 	proxy.reverseProxy.ServeHTTP(writer, request)
 
-	// httputil.ReverseProxy writes a bad gateway response with no body. We
-	// can't change the code, so at least add a response body. This should
-	// probably be a 504 Gateway Timeout in some circumstances anyway.
-	// @todo get access to the internal error to send the appropriate code and/or
-	// get rid of httputil.ReverseProxy entirely :/
-	if writer.StatusCode == http.StatusBadGateway && writer.Size == 0 {
-		io.WriteString(writer, http.StatusText(http.StatusBadGateway))
+	return nil
+}
+
+// RoundTrip is a custom implementation of http.RoundTripper (transport) that
+// allow us to intercept the error from the transport before httputil.ReverseProxy
+// gets a chance to send its response. This is done because the error page
+// that ReverseProxy produces has no content.
+func (proxy *httpProxy) RoundTrip(request *http.Request) (*http.Response, error) {
+	response, err := proxy.transport.RoundTrip(request)
+	if err != nil {
+		writer := request.Context().Value("writer").(*ResponseWriter)
+		WriteError(writer, http.StatusBadGateway)
+		writer.Inner = nil
 	}
 
-	return nil
+	return response, err
 }

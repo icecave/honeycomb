@@ -27,7 +27,6 @@ type RequestContext struct {
 func (ctx *RequestContext) String() string {
 	frontend := ""
 	backend := "- -"
-	statusCode := 0
 	responseSize := "-"
 	timeToFirstByte := "-"
 	totalTime := "-"
@@ -39,11 +38,9 @@ func (ctx *RequestContext) String() string {
 
 	if ctx.IsWebSocket {
 		frontend = "wss://" + ctx.Request.Host
-		statusCode = http.StatusSwitchingProtocols
 		responseSize = "-"
 	} else {
 		frontend = "https://" + ctx.Request.Host
-		statusCode = ctx.Writer.StatusCode
 		responseSize = strconv.Itoa(ctx.Writer.Size)
 	}
 
@@ -79,7 +76,7 @@ func (ctx *RequestContext) String() string {
 		ctx.Request.Method,
 		ctx.Request.URL,
 		ctx.Request.Proto,
-		statusCode,
+		ctx.Writer.StatusCode,
 		responseSize,
 		timeToFirstByte,
 		totalTime,

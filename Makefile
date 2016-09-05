@@ -16,6 +16,17 @@ docker: artifacts/docker.touch
 deploy: docker
 	docker push "$(DOCKER_REPO):$(DOCKER_TAG)"
 
+.PHONY: prebuild
+prebuild: $(patsubst res/assets/%,src/assets/%.go, $(wildcard res/assets/*))
+
+src/assets/%.go: res/assets/%
+	@mkdir -p "$(@D)"
+	@echo "package assets" > "$@"
+	@echo >> "$@"
+	@echo 'const Asset_$(subst .,_,$(notdir $<)) = `' >> "$@"
+	cat "$<" >> "$@"
+	@echo '`' >> "$@"
+
 artifacts/certificates:
 	@mkdir -p "$@"
 	openssl genrsa -out "$@/ca.key" 2048

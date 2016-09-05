@@ -89,7 +89,7 @@ func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http
 			defer svr.Metrics.EndRequest(ctx)
 
 			if ctx.Error != nil {
-				http.Error(&ctx.Writer, "Service Unavailable", http.StatusServiceUnavailable)
+				proxy.WriteError(&ctx.Writer, http.StatusServiceUnavailable)
 			} else if ctx.IsWebSocket {
 				ctx.Error = svr.WebSocketProxy.ForwardRequest(ctx.Endpoint, &ctx.Writer, ctx.Request)
 			} else {
