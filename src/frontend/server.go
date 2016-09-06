@@ -24,7 +24,6 @@ type Server struct {
 	WebSocketProxy      proxy.Proxy
 	Interceptor         Interceptor
 	Logger              *log.Logger
-	Metrics             Metrics
 }
 
 // Run starts the server and blocks until it exits.
@@ -85,9 +84,6 @@ func (svr *Server) forwardRequest(innerWriter http.ResponseWriter, request *http
 		}
 
 		if !ctx.Intercepted {
-			svr.Metrics.StartRequest(ctx)
-			defer svr.Metrics.EndRequest(ctx)
-
 			if ctx.Error != nil {
 				proxy.WriteError(&ctx.Writer, http.StatusServiceUnavailable)
 			} else if ctx.IsWebSocket {

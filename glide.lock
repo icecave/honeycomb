@@ -1,5 +1,5 @@
-hash: 246454cbcbbafa6bcb45c7c3f945e99a0aa38e7318acc63f1f8748d96425667f
-updated: 2016-09-01T17:09:28.200567174+10:00
+hash: 39a1d6a28acf0007fc59a3dd9b3a68eb53d852e42f1c5ca26815178b6f012532
+updated: 2016-09-06T14:32:19.439571186+10:00
 imports:
 - name: github.com/davecgh/go-spew
   version: 6cf5744a041a0022271cefed95ba843f6d87fd51
@@ -11,7 +11,7 @@ imports:
   - digest
   - reference
 - name: github.com/docker/engine-api
-  version: b66d7d91dbde8b568eab9587fe9cbdd08506ed2e
+  version: f9cef590446e4e6073b49b652f47a337b897c1a3
   subpackages:
   - client
   - client/transport
@@ -79,10 +79,6 @@ imports:
   version: b4ffe2974db985c205b23ee8d300cc148b494218
   subpackages:
   - libcontainer/user
-- name: github.com/quipo/statsd
-  version: 494c2067718d0c58116be15337f466e393273617
-  subpackages:
-  - event
 - name: github.com/Sirupsen/logrus
   version: 55eb11d21d2a31a3cc93838241d04800f52e823d
 - name: golang.org/x/net
@@ -96,8 +92,6 @@ imports:
   subpackages:
   - unix
   - windows
-- name: gopkg.in/alexcesaro/statsd.v2
-  version: 7fea3f0d2fab1ad973e641e51dba45443a311a90
 testImports:
 - name: gopkg.in/yaml.v2
   version: e4d366fc3c7938e2958e662b4258c7a89e1f0e3e
