@@ -13,10 +13,10 @@ type ServerName struct {
 	Punycode string
 }
 
-// NormalizeServerName produces a ServerName value from a string, or panics if
+// ParseServerName produces a ServerName value from a string, or panics if
 // it is unable to do so.
-func NormalizeServerName(name string) ServerName {
-	normalized, err := TryNormalizeServerName(name)
+func ParseServerName(name string) ServerName {
+	normalized, err := TryParseServerName(name)
 	if err != nil {
 		panic(err)
 	}
@@ -24,8 +24,8 @@ func NormalizeServerName(name string) ServerName {
 	return normalized
 }
 
-// TryNormalizeServerName attempts to produce a ServerName value from a string.
-func TryNormalizeServerName(name string) (ServerName, error) {
+// TryParseServerName attempts to produce a ServerName value from a string.
+func TryParseServerName(name string) (ServerName, error) {
 	var normalized ServerName
 	var err error
 

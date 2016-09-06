@@ -107,7 +107,7 @@ func (svr *Server) getCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 		return nil, fmt.Errorf("no SNI information")
 	}
 
-	serverName, err := name.TryNormalizeServerName(info.ServerName)
+	serverName, err := name.TryParseServerName(info.ServerName)
 	if err != nil {
 		return nil, err
 	}
@@ -144,5 +144,5 @@ func serverNameFromRequest(request *http.Request) (name.ServerName, error) {
 		host = request.Host
 	}
 
-	return name.TryNormalizeServerName(host)
+	return name.TryParseServerName(host)
 }
