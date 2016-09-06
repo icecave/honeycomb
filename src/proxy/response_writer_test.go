@@ -105,7 +105,7 @@ var _ = Describe("ResponseWriter", func() {
 
 		It("fails if the inner writer does not implement http.Hijacker", func() {
 			_, _, err := subject.Hijack()
-			Expect(err).To(MatchError("The wrapped response does not implement http.Hijacker."))
+			Expect(err).To(MatchError("The inner response writer does not implement http.Hijacker."))
 		})
 
 		It("calls OnRespond", func() {

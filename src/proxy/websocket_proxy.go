@@ -12,7 +12,16 @@ import (
 func NewWebSocketProxy(logger *log.Logger) Proxy {
 	return &webSocketProxy{
 		websocket.DefaultDialer,
-		&websocket.Upgrader{},
+		&websocket.Upgrader{
+			Error: func(
+				writer http.ResponseWriter,
+				_ *http.Request,
+				statusCode int,
+				_ error,
+			) {
+				WriteError(writer, statusCode)
+			},
+		},
 		logger,
 	}
 }
@@ -40,6 +49,7 @@ func (proxy *webSocketProxy) ForwardRequest(
 		buildBackendHeaders(frontendRequest),
 	)
 	if err != nil {
+		WriteError(frontendWriter, http.StatusBadGateway)
 		return err
 	}
 	defer backendConnection.Close()
@@ -54,6 +64,7 @@ func (proxy *webSocketProxy) ForwardRequest(
 	}
 
 	// Upgrade the incoming connection to a websocket ...
+	frontendWriter.StatusCode = http.StatusSwitchingProtocols
 	frontendConnection, err := proxy.upgrader.Upgrade(
 		frontendWriter,
 		frontendRequest,
