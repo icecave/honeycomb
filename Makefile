@@ -1,7 +1,7 @@
 DOCKER_REPO ?= icecave/honeycomb
 DOCKER_TAG  ?= dev
 
-EXTRA_PREREQUISITES := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
+PREREQUISITES := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
 
 -include artifacts/build/Makefile.in
 
