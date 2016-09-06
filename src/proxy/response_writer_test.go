@@ -28,6 +28,11 @@ var _ = Describe("ResponseWriter", func() {
 		It("returns the headers from the inner writer", func() {
 			Expect(subject.Header()).To(Equal(inner.header))
 		})
+
+		It("returns nil if the writer is muted", func() {
+			subject.Inner = nil
+			Expect(subject.Header()).To(BeNil())
+		})
 	})
 
 	Describe("Write", func() {
@@ -56,6 +61,13 @@ var _ = Describe("ResponseWriter", func() {
 			subject.Write([]byte("<buffer>"))
 			Expect(inner.statusCode).To(Equal(http.StatusNotFound))
 		})
+
+		It("does nothing if the writer is muted", func() {
+			subject.Inner = nil
+			subject.Write([]byte("<buffer>"))
+			Expect(subject.Size).To(Equal(0))
+			Expect(inner.buffer).To(BeNil())
+		})
 	})
 
 	Describe("WriteHeader", func() {
@@ -72,6 +84,12 @@ var _ = Describe("ResponseWriter", func() {
 
 			subject.WriteHeader(http.StatusNotFound)
 			Expect(called).To(BeTrue())
+		})
+
+		It("does nothing if the writer is muted", func() {
+			subject.Inner = nil
+			subject.WriteHeader(http.StatusNotFound)
+			Expect(inner.statusCode).To(Equal(0))
 		})
 	})
 
@@ -118,6 +136,12 @@ var _ = Describe("ResponseWriter", func() {
 
 			subject.Hijack()
 			Expect(called).To(BeTrue())
+		})
+
+		It("fails nothing if the writer is muted", func() {
+			subject.Inner = nil
+			_, _, err := subject.Hijack()
+			Expect(err).To(MatchError("The response writer is muted."))
 		})
 	})
 
