@@ -17,9 +17,9 @@ deploy: docker
 	docker push "$(DOCKER_REPO):$(DOCKER_TAG)"
 
 .PHONY: prebuild
-prebuild: $(patsubst res/assets/%,src/assets/%.go, $(wildcard res/assets/*))
+prebuild: $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
 
-src/assets/%.go: res/assets/%
+artifacts/assets/%.go: res/assets/%
 	@mkdir -p "$(@D)"
 	@echo "package assets" > "$@"
 	@echo >> "$@"

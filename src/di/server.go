@@ -47,7 +47,7 @@ func (con *Container) Locator() backend.Locator {
 		"server.locator",
 		func() (interface{}, error) {
 			staticLocator := &backend.StaticLocator{}
-			staticLocator.Add("static.lvh.me", &backend.Endpoint{
+			staticLocator.Add("static.192.168.60.36.xip.io", &backend.Endpoint{
 				Description: "local-echo-server",
 				Address:     "localhost:8080",
 			})

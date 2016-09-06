@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/icecave/honeycomb/src/assets"
+	"github.com/icecave/honeycomb/artifacts/assets"
 )
 
 var errorTemplate *template.Template
