@@ -11,17 +11,17 @@ import (
 
 var _ = Describe("AggregateLocator", func() {
 	var (
-		static1, static2 *backend.StaticLocator
+		static1, static2 backend.StaticLocator
 		subject          backend.AggregateLocator
 	)
 
 	BeforeEach(func() {
-		static1 = &backend.StaticLocator{}
-		static1.Add("foo", &backend.Endpoint{Address: "static1-foo:443"})
+		static1 = backend.StaticLocator{}.
+			With("foo", &backend.Endpoint{Address: "static1-foo:443"})
 
-		static2 = &backend.StaticLocator{}
-		static2.Add("foo", &backend.Endpoint{Address: "static2-foo:443"})
-		static2.Add("bar", &backend.Endpoint{Address: "static2-bar:443"})
+		static2 = backend.StaticLocator{}.
+			With("foo", &backend.Endpoint{Address: "static2-foo:443"}).
+			With("bar", &backend.Endpoint{Address: "static2-bar:443"})
 
 		subject = backend.AggregateLocator{static1, static2}
 	})

@@ -46,14 +46,14 @@ func (con *Container) Locator() backend.Locator {
 	return con.get(
 		"server.locator",
 		func() (interface{}, error) {
-			staticLocator := &backend.StaticLocator{}
-			staticLocator.Add("static.192.168.60.36.xip.io", &backend.Endpoint{
-				Description: "local-echo-server",
-				Address:     "localhost:8080",
-			})
-
 			return backend.AggregateLocator{
-				staticLocator,
+				backend.StaticLocator{}.With(
+					"static.*",
+					&backend.Endpoint{
+						Description: "local-echo-server",
+						Address:     "localhost:8080",
+					},
+				),
 				con.DockerLocator(),
 			}, nil
 		},

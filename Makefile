@@ -1,7 +1,9 @@
--include artifacts/build/Makefile.in
-
 DOCKER_REPO ?= icecave/honeycomb
 DOCKER_TAG  ?= dev
+
+EXTRA_PREREQUISITES := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
+
+-include artifacts/build/Makefile.in
 
 .PHONY: run
 run: build artifacts/certificates
@@ -15,9 +17,6 @@ docker: artifacts/docker.touch
 .PHONY: deploy
 deploy: docker
 	docker push "$(DOCKER_REPO):$(DOCKER_TAG)"
-
-.PHONY: prebuild
-prebuild: $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
 
 artifacts/assets/%.go: res/assets/%
 	@mkdir -p "$(@D)"

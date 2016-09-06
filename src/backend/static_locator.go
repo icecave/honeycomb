@@ -2,33 +2,39 @@ package backend
 
 import (
 	"context"
-	"sync"
 
 	"github.com/icecave/honeycomb/src/name"
 )
 
 // StaticLocator finds a back-end HTTP server based on the server name in TLS
 // requests (SNI).
-type StaticLocator struct {
-	endpoints map[string]*Endpoint
-	mutex     sync.RWMutex
-}
+type StaticLocator []matcherEndpointPair
 
 // Locate finds the back-end HTTP server for the given server name.
-func (locator *StaticLocator) Locate(_ context.Context, serverName name.ServerName) *Endpoint {
-	locator.mutex.RLock()
-	endpoint := locator.endpoints[serverName.Unicode]
-	locator.mutex.RUnlock()
+func (locator StaticLocator) Locate(_ context.Context, serverName name.ServerName) *Endpoint {
+	for _, item := range locator {
+		if item.Matcher.Match(serverName) {
+			return item.Endpoint
+		}
+	}
 
-	return endpoint
+	return nil
 }
 
-// Add creates a new mapping from server name to back-end HTTP server.
-func (locator *StaticLocator) Add(serverName string, endpoint *Endpoint) {
-	locator.mutex.Lock()
-	if locator.endpoints == nil {
-		locator.endpoints = map[string]*Endpoint{}
+// With returns a new StaticLocator that includes the given mapping.
+func (locator StaticLocator) With(pattern string, endpoint *Endpoint) StaticLocator {
+	matcher, err := name.NewMatcher(pattern)
+	if err != nil {
+		panic(err)
 	}
-	locator.endpoints[name.NormalizeServerName(serverName).Unicode] = endpoint
-	locator.mutex.Unlock()
+
+	return append(
+		locator,
+		matcherEndpointPair{matcher, endpoint},
+	)
+}
+
+type matcherEndpointPair struct {
+	Matcher  *name.Matcher
+	Endpoint *Endpoint
 }
