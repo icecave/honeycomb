@@ -2,9 +2,6 @@ package di
 
 import (
 	"crypto/tls"
-	"crypto/x509"
-	"encoding/pem"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -65,35 +62,26 @@ func init() {
 
 	Container.Define("frontend.cert.primary-provider", func(d *container.Definer) (interface{}, error) {
 		certificatePath := os.Getenv("CERTIFICATE_PATH")
-		certificate, err := tls.LoadX509KeyPair(
-			path.Join(certificatePath, "ca.crt"),
-			path.Join(certificatePath, "ca.key"),
-		)
+
+		issuerCertificate, err := cert.LoadX509Certificate(path.Join(certificatePath, "ca.crt"))
 		if err != nil {
 			return nil, err
 		}
 
-		raw, err := ioutil.ReadFile(
-			path.Join(certificatePath, "server.key"),
-		)
+		issuerKey, err := cert.LoadPrivateKey(path.Join(certificatePath, "ca.key"))
 		if err != nil {
 			return nil, err
 		}
 
-		block, unused := pem.Decode(raw)
-		if len(unused) > 0 {
-			return nil, err
-		}
-
-		serverKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+		serverKey, err := cert.LoadPrivateKey(path.Join(certificatePath, "server.key"))
 		if err != nil {
 			return nil, err
 		}
 
 		return &cert.AdhocProvider{
 			Generator: &generator.IssuerSignedGenerator{
-				IssuerCertificate: certificate.Leaf,
-				IssuerKey:         certificate.PrivateKey,
+				IssuerCertificate: issuerCertificate,
+				IssuerKey:         issuerKey,
 				ServerKey:         serverKey,
 			},
 			Logger: d.Get("logger").(*log.Logger),

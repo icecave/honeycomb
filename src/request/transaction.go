@@ -68,7 +68,7 @@ func NewTransaction(
 	txn := &Transaction{
 		Request:     request,
 		IsWebSocket: websocket.IsWebSocketUpgrade(request),
-		IsLogged:    true,
+		IsLogged:    request.URL.Path != "/favicon.ico",
 	}
 
 	txn.Writer = &Writer{
@@ -127,83 +127,91 @@ func (txn *Transaction) String() string {
 	var buffer bytes.Buffer
 
 	// remote address
-	write(buffer, txn.Request.RemoteAddr)
-	write(buffer, " ")
+	writeField(&buffer, txn.Request.RemoteAddr)
 
 	// frontend
 	if txn.IsWebSocket {
-		write(buffer, "wss://")
+		writeField(&buffer, "wss://%s", txn.Request.Host)
 	} else {
-		write(buffer, "https://")
+		writeField(&buffer, "https://%s", txn.Request.Host)
 	}
-	write(buffer, " ")
 
 	// backend + description
 	if txn.Endpoint == nil {
-		write(buffer, "- - ")
+		writeField(&buffer, "")
+		writeField(&buffer, "")
 	} else {
-		write(buffer, txn.Endpoint.GetScheme(txn.IsWebSocket))
-		write(buffer, "://")
-		write(buffer, txn.Endpoint.Address)
-		write(buffer, " ")
-		write(buffer, txn.Endpoint.Description)
-		write(buffer, " ")
+		writeField(
+			&buffer,
+			"%s://%s",
+			txn.Endpoint.GetScheme(txn.IsWebSocket),
+			txn.Endpoint.Address,
+		)
+		writeField(&buffer, txn.Endpoint.Description)
 	}
 
 	// status code
 	if txn.StatusCode == 0 {
-		write(buffer, "-")
+		writeField(&buffer, "")
 	} else {
-		write(buffer, strconv.Itoa(txn.StatusCode))
-	}
-
-	// time to first / last byte
-	switch txn.State {
-	case StateReceived:
-		write(buffer, "- - ")
-	case StateResponded:
-		write(buffer, txn.Timer.TimeToFirstByte.String())
-		write(buffer, " ")
-	case StateClosed:
-		write(buffer, txn.Timer.TimeToFirstByte.String())
-		write(buffer, " ")
-		write(buffer, txn.Timer.TimeToLastByte.String())
-		write(buffer, " ")
+		writeField(&buffer, "%d", txn.StatusCode)
 	}
 
 	// bytes in / out
-	write(buffer, strconv.Itoa(txn.BytesIn))
-	write(buffer, "i ")
-	write(buffer, strconv.Itoa(txn.BytesOut))
-	write(buffer, "o ")
+	writeField(&buffer, "i/%d", txn.BytesIn)
+	writeField(&buffer, "o/%d", txn.BytesOut)
+
+	// time to first byte
+	if txn.Timer.TimeToFirstByte <= 0 {
+		writeField(&buffer, "")
+	} else {
+		writeField(&buffer, "f/%0.2fms", txn.Timer.TimeToFirstByte)
+	}
+
+	// time to last byte
+	if txn.Timer.TimeToLastByte <= 0 {
+		writeField(&buffer, "")
+	} else {
+		writeField(&buffer, "l/%0.2fms", txn.Timer.TimeToLastByte)
+	}
 
 	// request information
-	write(buffer, fmt.Sprintf(
+	writeField(
+		&buffer,
 		"%s %s %s",
 		txn.Request.Method,
 		txn.Request.URL,
 		txn.Request.Proto,
-	))
+	)
 
 	// error message (optional)
 	if txn.Error != nil {
-		write(buffer, " ")
-		write(buffer, txn.Error.Error())
+		writeField(&buffer, txn.Error.Error())
 	} else if txn.IsWebSocket && txn.State == StateResponded {
-		write(buffer, " websocket connection established")
+		writeField(&buffer, "websocket connection established")
 	}
 
 	return buffer.String()
 }
 
-// write is a helper function that writes to a string to a buffer, quoting the
-// string if it contains whitespace or non-printable characters.
-func write(buffer bytes.Buffer, str string) {
-	quoted := strconv.Quote(str)
-	if quoted != str || strings.ContainsRune(str, ' ') {
-		buffer.WriteRune('"')
-		buffer.WriteString(quoted)
-		buffer.WriteRune('"')
+// writeField is a helper function that writes to a string to a buffer, quoting
+//  the string if it contains whitespace or special characters.
+func writeField(buffer *bytes.Buffer, str string, v ...interface{}) {
+	if buffer.Len() != 0 {
+		buffer.WriteRune(' ')
+	}
+
+	if len(v) != 0 {
+		str = fmt.Sprintf(str, v...)
+	}
+
+	if str == "" {
+		buffer.WriteRune('-')
+		return
+	}
+
+	if strings.ContainsAny(str, " \a\b\f\n\r\t\v\"") {
+		buffer.WriteString(strconv.Quote(str))
 	} else {
 		buffer.WriteString(str)
 	}
