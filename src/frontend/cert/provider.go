@@ -7,14 +7,19 @@ import (
 	"github.com/icecave/honeycomb/src/name"
 )
 
-// Provider fetches TLS certificates for incoming TLS requests.
+// Provider fetches or creates TLS certificates for incoming HTTPS requests.
 type Provider interface {
-	// GetExistingCertificate returns the certificate for the given server name,
-	// if it has already been generated. If the certificate has not been
-	// generated the returned certificate and error are both nil.
-	GetExistingCertificate(ctx context.Context, serverName name.ServerName) (*tls.Certificate, error)
+	// GetCertificate attempts to fetch an existing certificate for the given
+	// server name. If no such certificate exists, it generates one.
+	GetCertificate(context.Context, name.ServerName) (*tls.Certificate, error)
 
-	// GetCertificate returns the certificate for the given server name. If the
-	// certificate doe not exist, it attempts to generate one.
-	GetCertificate(ctx context.Context, serverName name.ServerName) (*tls.Certificate, error)
+	// GetExistingCertificate attempts to fetch an existing certificate for the
+	// given server name. It never generats new certificates. A non-nil error
+	// indicates an error with the provider itself; otherwise, a nil certificate
+	// indicates a failure to find an existing certificate.
+	GetExistingCertificate(context.Context, name.ServerName) (*tls.Certificate, error)
+
+	// GetDefaultCertificate returns a default certificate to use when the
+	// server name is invalid or no SNI information is available.
+	GetDefaultCertificate(ctx context.Context) (*tls.Certificate, error)
 }
