@@ -1,4 +1,4 @@
-package request_test
+package transaction_test
 
 import (
 	"bufio"
@@ -6,26 +6,26 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/icecave/honeycomb/src/request"
+	"github.com/icecave/honeycomb/src/transaction"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("ResponseWriter", func() {
 	var (
-		inner       *fakeResponseWriter
-		transaction *request.Transaction
-		subject     *request.Writer
+		inner   *fakeResponseWriter
+		txn     *transaction.Transaction
+		subject *transaction.Writer
 	)
 
 	BeforeEach(func() {
 		inner = &fakeResponseWriter{
 			header: http.Header{"X-Header": []string{"<value>"}},
 		}
-		transaction = &request.Transaction{}
-		subject = &request.Writer{
+		txn = &transaction.Transaction{}
+		subject = &transaction.Writer{
 			Inner:       inner,
-			Transaction: transaction,
+			Transaction: txn,
 		}
 	})
 
@@ -43,7 +43,7 @@ var _ = Describe("ResponseWriter", func() {
 	Describe("Write", func() {
 		It("increments the byte counter", func() {
 			subject.Write([]byte("<buffer>"))
-			Expect(transaction.BytesOut).To(Equal(8))
+			Expect(txn.BytesOut).To(Equal(8))
 		})
 
 		It("writes the buffer to the inner writer", func() {
@@ -70,7 +70,7 @@ var _ = Describe("ResponseWriter", func() {
 		It("does nothing if the writer is closed", func() {
 			subject.Inner = nil
 			subject.Write([]byte("<buffer>"))
-			Expect(transaction.BytesOut).To(Equal(0))
+			Expect(txn.BytesOut).To(Equal(0))
 			Expect(inner.buffer).To(BeNil())
 		})
 	})
@@ -83,7 +83,7 @@ var _ = Describe("ResponseWriter", func() {
 
 		It("transitions the transaction to the 'responded' state", func() {
 			subject.WriteHeader(http.StatusNotFound)
-			Expect(transaction.State).To(Equal(request.StateResponded))
+			Expect(txn.State).To(Equal(transaction.StateResponded))
 		})
 
 		It("does nothing if the writer is closed", func() {

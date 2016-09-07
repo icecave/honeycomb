@@ -1,4 +1,4 @@
-package request
+package transaction
 
 // Handler is a HTTP request handler that operates on a transaction, rather
 // than separate writer / request objects.

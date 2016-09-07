@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/icecave/honeycomb/src/name"
-	"github.com/icecave/honeycomb/src/request"
+	"github.com/icecave/honeycomb/src/transaction"
 )
 
 const healthCheckPath = "/health"
@@ -25,7 +25,7 @@ func (in *Interceptor) Provides(serverName name.ServerName) bool {
 // Intercept may optionally handle the request. The interceptor may also
 // clear txn.Error if the error no longer applies once the request is
 // intercepted.
-func (in *Interceptor) Intercept(txn *request.Transaction) {
+func (in *Interceptor) Intercept(txn *transaction.Transaction) {
 	if !in.Provides(txn.ServerName) {
 		return
 	} else if txn.Request.URL.Path != healthCheckPath {

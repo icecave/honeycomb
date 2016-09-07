@@ -1,4 +1,4 @@
-package request_test
+package transaction_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestSuite(t *testing.T) {
 	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "Request")
+	ginkgo.RunSpecs(t, "Transaction")
 }

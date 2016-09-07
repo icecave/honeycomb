@@ -14,7 +14,7 @@ import (
 	"github.com/icecave/honeycomb/src/frontend/cert/generator"
 	"github.com/icecave/honeycomb/src/frontend/health"
 	"github.com/icecave/honeycomb/src/proxy"
-	"github.com/icecave/honeycomb/src/request"
+	"github.com/icecave/honeycomb/src/transaction"
 )
 
 func init() {
@@ -46,7 +46,7 @@ func init() {
 	Container.Define("frontend.http-handler", func(d *container.Definer) (interface{}, error) {
 		return &frontend.HandlerAdaptor{
 			Locator:     d.Get("backend.locator").(backend.Locator),
-			Handler:     d.Get("frontend.proxy").(request.Handler),
+			Handler:     d.Get("frontend.proxy").(transaction.Handler),
 			Interceptor: &health.Interceptor{},
 			Logger:      d.Get("logger").(*log.Logger),
 		}, nil

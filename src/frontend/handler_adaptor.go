@@ -8,19 +8,19 @@ import (
 
 	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/name"
-	"github.com/icecave/honeycomb/src/request"
+	"github.com/icecave/honeycomb/src/transaction"
 )
 
-// HandlerAdaptor is an http.Handler that forwards to a Honeycomb request.Handler.
+// HandlerAdaptor is an http.Handler that forwards to a Honeycomb transaction.Handler.
 type HandlerAdaptor struct {
 	Locator     backend.Locator
-	Handler     request.Handler
+	Handler     transaction.Handler
 	Interceptor Interceptor
 	Logger      *log.Logger
 }
 
-func (adaptor *HandlerAdaptor) ServeHTTP(wri http.ResponseWriter, req *http.Request) {
-	txn := request.NewTransaction(wri, req)
+func (adaptor *HandlerAdaptor) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	txn := transaction.NewTransaction(writer, request)
 	txn.Open()
 	defer adaptor.close(txn)
 
@@ -40,7 +40,7 @@ func (adaptor *HandlerAdaptor) ServeHTTP(wri http.ResponseWriter, req *http.Requ
 
 	// Forward the request to the normal handler only if the interceptor did not
 	// already respond to it ...
-	if txn.State == request.StateReceived {
+	if txn.State == transaction.StateReceived {
 		adaptor.Handler.Serve(txn)
 	}
 }
@@ -52,7 +52,7 @@ func (adaptor *HandlerAdaptor) IsRecognised(ctx context.Context, serverName name
 		adaptor.Locator.Locate(ctx, serverName) != nil
 }
 
-func (adaptor *HandlerAdaptor) close(txn *request.Transaction) {
+func (adaptor *HandlerAdaptor) close(txn *transaction.Transaction) {
 	txn.Close()
 	if txn.IsLogged {
 		adaptor.Logger.Println(txn)

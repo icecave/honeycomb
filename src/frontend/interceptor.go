@@ -2,7 +2,7 @@ package frontend
 
 import (
 	"github.com/icecave/honeycomb/src/name"
-	"github.com/icecave/honeycomb/src/request"
+	"github.com/icecave/honeycomb/src/transaction"
 )
 
 // Interceptor is an http.Handler that conditionally intercepts HTTPS requests
@@ -17,5 +17,5 @@ type Interceptor interface {
 	// Intercept may optionally handle the request. The interceptor may also
 	// clear txn.Error if the error no longer applies once the request is
 	// intercepted.
-	Intercept(*request.Transaction)
+	Intercept(*transaction.Transaction)
 }

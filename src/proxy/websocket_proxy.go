@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/icecave/honeycomb/src/request"
+	"github.com/icecave/honeycomb/src/transaction"
 )
 
 // NewWebSocketProxy creates a new proxy that forwards WebSocket requests.
-func NewWebSocketProxy(logger *log.Logger) request.Handler {
+func NewWebSocketProxy(logger *log.Logger) transaction.Handler {
 	return &webSocketProxy{
 		websocket.DefaultDialer,
 		&websocket.Upgrader{
@@ -33,7 +33,7 @@ type webSocketProxy struct {
 }
 
 // Serve forwards an HTTP request to a specific backend server.
-func (proxy *webSocketProxy) Serve(txn *request.Transaction) {
+func (proxy *webSocketProxy) Serve(txn *transaction.Transaction) {
 	// Mangle the incoming request URL to point to the back-end ...
 	url := *txn.Request.URL
 	url.Scheme = txn.Endpoint.GetScheme(true)

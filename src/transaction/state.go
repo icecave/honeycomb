@@ -1,4 +1,4 @@
-package request
+package transaction
 
 // State indicates a request's progress through its life-cycle.
 type State int
