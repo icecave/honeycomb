@@ -19,18 +19,8 @@ type Writer struct {
 	// is sent to the client.
 	Inner http.ResponseWriter
 
-	// Context is the request context object to update with information about
-	// the response.
-	Context *Context
-}
-
-// Close ends writing, preventing any future writes from being sent to the
-// client.
-func (writer *Writer) Close() {
-	if writer.Inner != nil {
-		writer.Inner = nil
-		writer.Context.Close()
-	}
+	// Transaction is request transaction to which this writer belongs.
+	Transaction *Transaction
 }
 
 // Header returns writer.Inner.Header; or nil if the writer is closed.
@@ -50,12 +40,12 @@ func (writer *Writer) Write(data []byte) (int, error) {
 		return 0, nil
 	}
 
-	if writer.Context.State == StateReceived {
+	if writer.Transaction.State == StateReceived {
 		writer.WriteHeader(http.StatusOK)
 	}
 
 	size, err := writer.Inner.Write(data)
-	writer.Context.BytesOut += size
+	writer.Transaction.BytesOut += size
 
 	return size, err
 }
@@ -65,7 +55,7 @@ func (writer *Writer) Write(data []byte) (int, error) {
 func (writer *Writer) WriteHeader(statusCode int) {
 	if writer.Inner != nil {
 		writer.Inner.WriteHeader(statusCode)
-		writer.Context.HeadersSent(statusCode)
+		writer.Transaction.HeadersSent(statusCode)
 	}
 }
 

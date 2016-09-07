@@ -1,7 +1,10 @@
 package name
 
 import (
+	"crypto/tls"
 	"fmt"
+	"net"
+	"net/http"
 	"strings"
 
 	"golang.org/x/net/idna"
@@ -13,10 +16,10 @@ type ServerName struct {
 	Punycode string
 }
 
-// ParseServerName produces a ServerName value from a string, or panics if
+// Parse produces a ServerName value from a string, or panics if
 // it is unable to do so.
-func ParseServerName(name string) ServerName {
-	normalized, err := TryParseServerName(name)
+func Parse(name string) ServerName {
+	normalized, err := TryParse(name)
 	if err != nil {
 		panic(err)
 	}
@@ -24,8 +27,8 @@ func ParseServerName(name string) ServerName {
 	return normalized
 }
 
-// TryParseServerName attempts to produce a ServerName value from a string.
-func TryParseServerName(name string) (ServerName, error) {
+// TryParse attempts to produce a ServerName value from a string.
+func TryParse(name string) (ServerName, error) {
 	var normalized ServerName
 	var err error
 
@@ -40,6 +43,21 @@ func TryParseServerName(name string) (ServerName, error) {
 	normalized.Unicode, err = idna.ToUnicode(lowercase)
 
 	return normalized, err
+}
+
+// FromHTTP attempts to parse a server name from an HTTP request.
+func FromHTTP(request *http.Request) (ServerName, error) {
+	host, _, err := net.SplitHostPort(request.Host)
+	if err != nil {
+		host = request.Host
+	}
+
+	return TryParse(host)
+}
+
+// FromTLS attempts to parse a server name from a TLS request.
+func FromTLS(info *tls.ClientHelloInfo) (ServerName, error) {
+	return TryParse(info.ServerName)
 }
 
 // isDomainName checks if the given domain name is valid.

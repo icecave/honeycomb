@@ -54,7 +54,7 @@ var _ = Describe("Matcher", func() {
 			"it returns true when passed a matching server name",
 			func(pattern, serverName string) {
 				subject, _ := name.NewMatcher(pattern)
-				Expect(subject.Match(name.ParseServerName(serverName))).To(BeTrue())
+				Expect(subject.Match(name.Parse(serverName))).To(BeTrue())
 			},
 			Entry("exact match", "host.dømåin-name.tld", "host.dømåin-name.tld"),
 			Entry("wildcard prefix", "*.dømåin-name.tld", "host.dømåin-name.tld"),
@@ -68,7 +68,7 @@ var _ = Describe("Matcher", func() {
 			"it returns false when passed a non-matching server name",
 			func(pattern, serverName string) {
 				subject, _ := name.NewMatcher(pattern)
-				Expect(subject.Match(name.ParseServerName(serverName))).To(BeFalse())
+				Expect(subject.Match(name.Parse(serverName))).To(BeFalse())
 			},
 			Entry("exact match", "host.dømåin-name.tld", "host.different.tld"),
 			Entry("wildcard prefix", "*.dømåin-name.tld", "host.different.tld"),

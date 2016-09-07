@@ -3,8 +3,8 @@ package health
 import (
 	"io"
 
-	"github.com/icecave/honeycomb/src/frontend"
 	"github.com/icecave/honeycomb/src/name"
+	"github.com/icecave/honeycomb/src/request"
 )
 
 const healthCheckPath = "/health"
@@ -22,22 +22,25 @@ func (in *Interceptor) Provides(serverName name.ServerName) bool {
 	return serverName.Unicode == "localhost"
 }
 
-// Intercept may optionally handle the request. If the request is handled,
-// ctx.Intercept must be set to true. The interceptor may also clear
-// ctx.Error if the error no longer applies once the request is intercepted.
-func (in *Interceptor) Intercept(ctx *frontend.RequestContext) {
-	if !in.Provides(ctx.ServerName) {
+// Intercept may optionally handle the request. The interceptor may also
+// clear txn.Error if the error no longer applies once the request is
+// intercepted.
+func (in *Interceptor) Intercept(txn *request.Transaction) {
+	if !in.Provides(txn.ServerName) {
 		return
-	} else if ctx.Request.URL.Path != healthCheckPath {
+	} else if txn.Request.URL.Path != healthCheckPath {
 		return
 	}
 
-	ctx.Intercepted = true
-	ctx.SuppressLogs = true
-	ctx.Error = nil
+	txn.IsLogged = false
+	txn.Error = nil
 
 	// The fact that this request made it through is enough to verify that the
 	// HTTP server is listening ...
-	ctx.Writer.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	io.WriteString(&ctx.Writer, "Server is accepting requests.") // @todo add some basic stats
+	txn.Writer.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	io.WriteString(txn.Writer, "Server is accepting requests.")
+	txn.Close()
+
+	// @todo add some basic stats
+	// @todo check that we're connected to a docker swarm master
 }

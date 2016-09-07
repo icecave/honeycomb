@@ -12,8 +12,8 @@ import (
 	"github.com/icecave/honeycomb/src/name"
 )
 
-// Context stores the full context of the request across its lifetime.
-type Context struct {
+// Transaction stores the state of a HTTP request across its lifetime.
+type Transaction struct {
 	// ServerName is the SNI value provided during the TLS handshake.
 	ServerName name.ServerName
 
@@ -28,7 +28,7 @@ type Context struct {
 	Request *http.Request
 
 	// Writer is a wrapper around the the original HTTP response writer which
-	// updates the context with information about the response.
+	// updates the transaction with information about the response.
 	Writer *Writer
 
 	// StatusCode is the HTTP status code sent in response to this request.
@@ -44,8 +44,9 @@ type Context struct {
 	// logged by the server.
 	IsLogged bool
 
-	// LogError is an optional error that should be logged for this request.
-	LogError error
+	// Error is the final error state of the request. If it is non-nil it is
+	// logged.
+	Error error
 
 	// Timer captures timing information of events during the request life-cycle.
 	Timer Timer
@@ -59,45 +60,51 @@ type Context struct {
 	BytesOut int
 }
 
-// NewContext creates a new context for the given request/response pair.
-func NewContext(
+// NewTransaction creates a new transaction for the given request/response pair.
+func NewTransaction(
 	writer http.ResponseWriter,
 	request *http.Request,
-) *Context {
-	ctx := &Context{
+) *Transaction {
+	txn := &Transaction{
 		Request:     request,
 		IsWebSocket: websocket.IsWebSocketUpgrade(request),
 		IsLogged:    true,
 	}
 
-	ctx.Timer.Start()
-
-	ctx.Writer = &Writer{
-		Inner:   writer,
-		Context: ctx,
+	txn.Writer = &Writer{
+		Inner:       writer,
+		Transaction: txn,
 	}
 
-	ctx.ServerName, ctx.LogError = name.FromHTTP(request)
+	txn.ServerName, txn.Error = name.FromHTTP(request)
 
-	return ctx
+	return txn
 }
 
-// HeadersSent updates the context to reflect that the HTTP response headers
+// Open starts the request.
+func (txn *Transaction) Open() {
+	txn.Timer.Start()
+}
+
+// HeadersSent updates the transaction to reflect that the HTTP response headers
 // have been sent.
-func (ctx *Context) HeadersSent(statusCode int) {
-	ctx.State = StateResponded
-	ctx.StatusCode = statusCode
-	ctx.Timer.FirstByteSent()
+func (txn *Transaction) HeadersSent(statusCode int) {
+	txn.Timer.FirstByteSent()
+	txn.State = StateResponded
+	txn.StatusCode = statusCode
 }
 
-// Close marks the request as complete.
-func (ctx *Context) Close() {
-	ctx.State = StateClosed
-	ctx.Timer.LastByteSent()
+// Close marks the request as complete. Call
+func (txn *Transaction) Close() {
+	if txn.State != StateClosed {
+		txn.Timer.LastByteSent()
+		txn.State = StateClosed
+		txn.Writer.Inner = nil
+	}
 }
 
-// String returns the log message for the context. If logging is disabled for
-// this request, an empty string is returned. The log format consists of the
+// String returns the log message for the transaction. If logging is disabled
+// for this request, an empty string is returned. The log format consists of the
 // following space separated fields:
 //
 // - remote address
@@ -116,15 +123,15 @@ func (ctx *Context) Close() {
 // unknown, a hyphen is used in place. If a string value itself contains spaces
 // or double quotes it is represented as a double-quoted Go string. This allows
 // log output to be parsed programatically.
-func (ctx *Context) String() string {
+func (txn *Transaction) String() string {
 	var buffer bytes.Buffer
 
 	// remote address
-	write(buffer, ctx.Request.RemoteAddr)
+	write(buffer, txn.Request.RemoteAddr)
 	write(buffer, " ")
 
 	// frontend
-	if ctx.IsWebSocket {
+	if txn.IsWebSocket {
 		write(buffer, "wss://")
 	} else {
 		write(buffer, "https://")
@@ -132,57 +139,57 @@ func (ctx *Context) String() string {
 	write(buffer, " ")
 
 	// backend + description
-	if ctx.Endpoint == nil {
+	if txn.Endpoint == nil {
 		write(buffer, "- - ")
 	} else {
-		write(buffer, ctx.Endpoint.GetScheme(ctx.IsWebSocket))
+		write(buffer, txn.Endpoint.GetScheme(txn.IsWebSocket))
 		write(buffer, "://")
-		write(buffer, ctx.Endpoint.Address)
+		write(buffer, txn.Endpoint.Address)
 		write(buffer, " ")
-		write(buffer, ctx.Endpoint.Description)
+		write(buffer, txn.Endpoint.Description)
 		write(buffer, " ")
 	}
 
 	// status code
-	if ctx.StatusCode == 0 {
+	if txn.StatusCode == 0 {
 		write(buffer, "-")
 	} else {
-		write(buffer, strconv.Itoa(ctx.StatusCode))
+		write(buffer, strconv.Itoa(txn.StatusCode))
 	}
 
 	// time to first / last byte
-	switch ctx.State {
+	switch txn.State {
 	case StateReceived:
 		write(buffer, "- - ")
 	case StateResponded:
-		write(buffer, ctx.Timer.TimeToFirstByte.String())
+		write(buffer, txn.Timer.TimeToFirstByte.String())
 		write(buffer, " ")
 	case StateClosed:
-		write(buffer, ctx.Timer.TimeToFirstByte.String())
+		write(buffer, txn.Timer.TimeToFirstByte.String())
 		write(buffer, " ")
-		write(buffer, ctx.Timer.TimeToLastByte.String())
+		write(buffer, txn.Timer.TimeToLastByte.String())
 		write(buffer, " ")
 	}
 
 	// bytes in / out
-	write(buffer, strconv.Itoa(ctx.BytesIn))
+	write(buffer, strconv.Itoa(txn.BytesIn))
 	write(buffer, "i ")
-	write(buffer, strconv.Itoa(ctx.BytesOut))
+	write(buffer, strconv.Itoa(txn.BytesOut))
 	write(buffer, "o ")
 
 	// request information
 	write(buffer, fmt.Sprintf(
 		"%s %s %s",
-		ctx.Request.Method,
-		ctx.Request.URL,
-		ctx.Request.Proto,
+		txn.Request.Method,
+		txn.Request.URL,
+		txn.Request.Proto,
 	))
 
 	// error message (optional)
-	if ctx.LogError != nil {
+	if txn.Error != nil {
 		write(buffer, " ")
-		write(buffer, ctx.LogError.Error())
-	} else if ctx.IsWebSocket && ctx.State == StateResponded {
+		write(buffer, txn.Error.Error())
+	} else if txn.IsWebSocket && txn.State == StateResponded {
 		write(buffer, " websocket connection established")
 	}
 

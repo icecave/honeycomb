@@ -30,7 +30,7 @@ var _ = Describe("AggregateLocator", func() {
 		It("locates endpoints from the inner locators", func() {
 			endpoint := subject.Locate(
 				context.Background(),
-				name.ParseServerName("bar"),
+				name.Parse("bar"),
 			)
 			Expect(endpoint).ShouldNot(BeNil())
 			Expect(endpoint.Address).To(Equal("static2-bar:443"))
@@ -39,7 +39,7 @@ var _ = Describe("AggregateLocator", func() {
 		It("searches the inner locators in order", func() {
 			endpoint := subject.Locate(
 				context.Background(),
-				name.ParseServerName("foo"),
+				name.Parse("foo"),
 			)
 			Expect(endpoint).ShouldNot(BeNil())
 			Expect(endpoint.Address).To(Equal("static1-foo:443"))
@@ -48,7 +48,7 @@ var _ = Describe("AggregateLocator", func() {
 		It("returns nil if none of the inner locators can locate the endpoint", func() {
 			endpoint := subject.Locate(
 				context.Background(),
-				name.ParseServerName("unknown"),
+				name.Parse("unknown"),
 			)
 			Expect(endpoint).To(BeNil())
 		})

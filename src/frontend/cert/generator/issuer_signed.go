@@ -2,6 +2,7 @@ package generator
 
 import (
 	"context"
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -18,10 +19,11 @@ type IssuerSignedGenerator struct {
 	// sign-signed CA certificate.
 	IssuerCertificate *x509.Certificate
 
-	// IssuerKey is the issuer's private RSA key.
-	IssuerKey *rsa.PrivateKey
+	// IssuerKey is the issuer's private key.
+	IssuerKey crypto.PrivateKey
 
 	// ServerKey is the server's private RSA key.
+	// @todo support other key types
 	ServerKey *rsa.PrivateKey
 
 	// NotBeforeOffset specifies the amount of time added to the current time to

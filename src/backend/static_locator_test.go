@@ -25,7 +25,7 @@ var _ = Describe("StaticLocator", func() {
 		It("matches the endpoints", func() {
 			endpoint := subject.Locate(
 				context.Background(),
-				name.ParseServerName("foo"),
+				name.Parse("foo"),
 			)
 			Expect(endpoint).ShouldNot(BeNil())
 			Expect(endpoint.Address).To(Equal("foo:443"))
@@ -34,7 +34,7 @@ var _ = Describe("StaticLocator", func() {
 		It("matches the endpoints in order", func() {
 			endpoint := subject.Locate(
 				context.Background(),
-				name.ParseServerName("bar"),
+				name.Parse("bar"),
 			)
 			Expect(endpoint).ShouldNot(BeNil())
 			Expect(endpoint.Address).To(Equal("bar1:443"))
@@ -43,7 +43,7 @@ var _ = Describe("StaticLocator", func() {
 		It("returns nil if none of the endpoints match", func() {
 			endpoint := subject.Locate(
 				context.Background(),
-				name.ParseServerName("unknown"),
+				name.Parse("unknown"),
 			)
 			Expect(endpoint).To(BeNil())
 		})
@@ -65,7 +65,7 @@ var _ = Describe("StaticLocator", func() {
 
 			endpoint := subject.Locate(
 				context.Background(),
-				name.ParseServerName("nomatch"),
+				name.Parse("nomatch"),
 			)
 			Expect(endpoint).To(BeNil())
 		})

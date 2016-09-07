@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/icecave/honeycomb/src/backend"
+	"github.com/icecave/honeycomb/src/request"
 )
 
 // NewWebSocketProxy creates a new proxy that forwards WebSocket requests.
-func NewWebSocketProxy(logger *log.Logger) Proxy {
+func NewWebSocketProxy(logger *log.Logger) request.Handler {
 	return &webSocketProxy{
 		websocket.DefaultDialer,
 		&websocket.Upgrader{
@@ -33,51 +33,46 @@ type webSocketProxy struct {
 }
 
 // Serve forwards an HTTP request to a specific backend server.
-func (proxy *webSocketProxy) ForwardRequest(
-	endpoint *backend.Endpoint,
-	frontendWriter *ResponseWriter,
-	frontendRequest *http.Request,
-) error {
+func (proxy *webSocketProxy) Serve(txn *request.Transaction) {
 	// Mangle the incoming request URL to point to the back-end ...
-	url := *frontendRequest.URL
-	url.Scheme = endpoint.GetScheme(true)
-	url.Host = endpoint.Address
+	url := *txn.Request.URL
+	url.Scheme = txn.Endpoint.GetScheme(true)
+	url.Host = txn.Endpoint.Address
 
 	// Connect to the back-end server ...
-	backendConnection, backendResponse, err := proxy.dialer.Dial(
+	backend, response, err := proxy.dialer.Dial(
 		url.String(),
-		buildBackendHeaders(frontendRequest),
+		buildBackendHeaders(txn.Request),
 	)
 	if err != nil {
-		WriteError(frontendWriter, http.StatusBadGateway)
-		return err
+		WriteError(txn.Writer, http.StatusBadGateway)
+		txn.Error = err
+		return
 	}
-	defer backendConnection.Close()
+	defer backend.Close()
 
 	// Strip out Hop-by-Hop headers from the backend's response to send to the
 	// frontend connection ...
 	upgradeHeaders := http.Header{}
-	for name, values := range backendResponse.Header {
+	for name, values := range response.Header {
 		if !isHopByHopHeader(name) {
 			upgradeHeaders[name] = values
 		}
 	}
 
 	// Upgrade the incoming connection to a websocket ...
-	frontendWriter.StatusCode = http.StatusSwitchingProtocols
-	frontendConnection, err := proxy.upgrader.Upgrade(
-		frontendWriter,
-		frontendRequest,
-		upgradeHeaders,
-	)
+	client, err := proxy.upgrader.Upgrade(txn.Writer, txn.Request, upgradeHeaders)
 	if err != nil {
-		return err
+		txn.Error = err
+		return
 	}
-	defer frontendConnection.Close()
+	defer client.Close()
+
+	txn.HeadersSent(http.StatusSwitchingProtocols)
 
 	// Pipe data between the connections until they're closed ...
-	return Pipe(
-		backendConnection.UnderlyingConn(),
-		frontendConnection.UnderlyingConn(),
+	txn.Error = Pipe(
+		client.UnderlyingConn(),
+		backend.UnderlyingConn(),
 	)
 }

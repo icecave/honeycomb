@@ -12,9 +12,9 @@ import (
 // no other timeout is specified.
 const DefaultTimeout = 5 * time.Second
 
-// Adaptor wraps a primary and secondary Provider to present an interface
-// suitable for use as the tls.Config "GetEnvironment" callback.
-type Adaptor struct {
+// ProviderAdaptor wraps a primary and secondary Provider to present an
+// interface suitable for use as the tls.Config "GetEnvironment" callback.
+type ProviderAdaptor struct {
 	// PrimaryProvider is the certificate provider used to create certificates
 	// for "normal" recognised server names.
 	PrimaryProvider Provider
@@ -30,11 +30,11 @@ type Adaptor struct {
 	// IsRecognised is a predicate function that is used to work out which
 	// certificate provider to use for a given server name. If IsRecognised is
 	// nil, all server names are considered unrecognised.
-	IsRecognised func(name.ServerName) bool
+	IsRecognised func(context.Context, name.ServerName) bool
 }
 
 // GetCertificate forwards certificate requests to the appropriate provider.
-func (adaptor *Adaptor) GetCertificate(
+func (adaptor *ProviderAdaptor) GetCertificate(
 	info *tls.ClientHelloInfo,
 ) (*tls.Certificate, error) {
 	ctx, cancel := adaptor.context()
@@ -58,7 +58,7 @@ func (adaptor *Adaptor) GetCertificate(
 
 	// If the server name is recognised, use the primary provider to get a new
 	// certificate for the server name ...
-	if adaptor.IsRecognised != nil && adaptor.IsRecognised(serverName) {
+	if adaptor.IsRecognised != nil && adaptor.IsRecognised(ctx, serverName) {
 		return adaptor.PrimaryProvider.GetCertificate(ctx, serverName)
 	}
 
@@ -67,7 +67,7 @@ func (adaptor *Adaptor) GetCertificate(
 }
 
 // context returns a new context to use for a request.
-func (adaptor *Adaptor) context() (context.Context, context.CancelFunc) {
+func (adaptor *ProviderAdaptor) context() (context.Context, context.CancelFunc) {
 	timeout := adaptor.Timeout
 	if timeout == 0 {
 		timeout = DefaultTimeout

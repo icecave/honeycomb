@@ -21,5 +21,5 @@ type Provider interface {
 
 	// GetDefaultCertificate returns a default certificate to use when the
 	// server name is invalid or no SNI information is available.
-	GetDefaultCertificate(ctx context.Context) (*tls.Certificate, error)
+	GetDefaultCertificate(context.Context) (*tls.Certificate, error)
 }

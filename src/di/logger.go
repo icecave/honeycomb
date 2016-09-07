@@ -3,19 +3,16 @@ package di
 import (
 	"log"
 	"os"
+
+	"github.com/icecave/honeycomb/src/di/container"
 )
 
-// Logger returns the application-wide logger.
-func (con *Container) Logger() *log.Logger {
-	return con.get(
-		"logger",
-		func() (interface{}, error) {
-			return log.New(
-				os.Stdout,
-				"",
-				log.LstdFlags,
-			), nil
-		},
-		nil,
-	).(*log.Logger)
+func init() {
+	Container.Define("logger", func(d *container.Definer) (interface{}, error) {
+		return log.New(
+			os.Stdout,
+			"",
+			log.LstdFlags,
+		), nil
+	})
 }

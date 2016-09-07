@@ -13,19 +13,19 @@ import (
 
 var _ = Describe("ResponseWriter", func() {
 	var (
-		inner   *fakeResponseWriter
-		context *request.Context
-		subject *request.Writer
+		inner       *fakeResponseWriter
+		transaction *request.Transaction
+		subject     *request.Writer
 	)
 
 	BeforeEach(func() {
 		inner = &fakeResponseWriter{
 			header: http.Header{"X-Header": []string{"<value>"}},
 		}
-		context = &request.Context{}
+		transaction = &request.Transaction{}
 		subject = &request.Writer{
-			Inner:   inner,
-			Context: context,
+			Inner:       inner,
+			Transaction: transaction,
 		}
 	})
 
@@ -43,7 +43,7 @@ var _ = Describe("ResponseWriter", func() {
 	Describe("Write", func() {
 		It("increments the byte counter", func() {
 			subject.Write([]byte("<buffer>"))
-			Expect(context.BytesOut).To(Equal(8))
+			Expect(transaction.BytesOut).To(Equal(8))
 		})
 
 		It("writes the buffer to the inner writer", func() {
@@ -70,7 +70,7 @@ var _ = Describe("ResponseWriter", func() {
 		It("does nothing if the writer is closed", func() {
 			subject.Inner = nil
 			subject.Write([]byte("<buffer>"))
-			Expect(context.BytesOut).To(Equal(0))
+			Expect(transaction.BytesOut).To(Equal(0))
 			Expect(inner.buffer).To(BeNil())
 		})
 	})
@@ -81,9 +81,9 @@ var _ = Describe("ResponseWriter", func() {
 			Expect(inner.statusCode).To(Equal(http.StatusNotFound))
 		})
 
-		It("transitions the context to the 'responded' state", func() {
+		It("transitions the transaction to the 'responded' state", func() {
 			subject.WriteHeader(http.StatusNotFound)
-			Expect(context.State).To(Equal(request.StateResponded))
+			Expect(transaction.State).To(Equal(request.StateResponded))
 		})
 
 		It("does nothing if the writer is closed", func() {

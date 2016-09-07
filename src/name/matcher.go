@@ -50,7 +50,7 @@ func NewMatcher(pattern string) (*Matcher, error) {
 		domainPart = domainPart[:len(domainPart)-2]
 	}
 
-	if _, err := TryParseServerName(domainPart); err != nil {
+	if _, err := TryParse(domainPart); err != nil {
 		return nil, fmt.Errorf(
 			"'%s' is not a valid server name pattern",
 			domainPart,

@@ -1,89 +1,39 @@
 package di
 
 import (
+	"log"
 	"os"
 	"time"
 
 	"github.com/docker/engine-api/client"
-	"github.com/icecave/honeycomb/src/backend"
+	"github.com/icecave/honeycomb/src/di/container"
 	"github.com/icecave/honeycomb/src/docker"
 )
 
-// DockerClient returns the docker client used to access the swarm.
-func (con *Container) DockerClient() client.APIClient {
-	return con.get(
-		"docker.client",
-		func() (interface{}, error) {
-			return client.NewEnvClient()
-		},
-		nil,
-	).(client.APIClient)
-}
+func init() {
+	Container.Define("DOCKER_POLL_INTERVAL", func(d *container.Definer) (interface{}, error) {
+		if interval := os.Getenv("DOCKER_POLL_INTERVAL"); interval != "" {
+			return time.ParseDuration(interval)
+		}
 
-// ServiceLoader returns the service loader used to load Docker services.
-func (con *Container) ServiceLoader() *docker.ServiceLoader {
-	return con.get(
-		"docker.service-loader",
-		func() (interface{}, error) {
-			return &docker.ServiceLoader{
-				Client:    con.DockerClient(),
-				Inspector: con.ServiceInspector(),
-				Logger:    con.Logger(),
-			}, nil
-		},
-		nil,
-	).(*docker.ServiceLoader)
-}
+		return docker.DefaultPollInterval, nil
+	})
 
-// ServiceInspector returns the service inspector used to create endpoints from
-// Docker services.
-func (con *Container) ServiceInspector() *docker.ServiceInspector {
-	return con.get(
-		"docker.service-inspector",
-		func() (interface{}, error) {
-			return &docker.ServiceInspector{
-				Client: con.DockerClient(),
-			}, nil
-		},
-		nil,
-	).(*docker.ServiceInspector)
-}
+	Container.Define("docker.client", func(d *container.Definer) (interface{}, error) {
+		return client.NewEnvClient()
+	})
 
-// DockerPollInterval returns the interval at which the Docker service list is
-// queried.
-func (con *Container) DockerPollInterval() time.Duration {
-	return con.get(
-		"docker.interval",
-		func() (interface{}, error) {
-			if interval := os.Getenv("DOCKER_INTERVAL"); interval != "" {
-				return time.ParseDuration(interval)
-			}
+	Container.Define("docker.service-loader", func(d *container.Definer) (interface{}, error) {
+		return &docker.ServiceLoader{
+			Client:    d.Get("docker.client").(client.APIClient),
+			Inspector: d.Get("docker.service-inspector").(*docker.ServiceInspector),
+			Logger:    d.Get("logger").(*log.Logger),
+		}, nil
+	})
 
-			return docker.DefaultPollInterval, nil
-		},
-		nil,
-	).(time.Duration)
-}
-
-// DockerLocator returns the back-end locator used to resolve server names to
-// Docker services.
-func (con *Container) DockerLocator() backend.Locator {
-	return con.get(
-		"docker.locator",
-		func() (interface{}, error) {
-			locator := docker.NewLocator(
-				con.DockerPollInterval(),
-				con.ServiceLoader(),
-				con.Logger(),
-			)
-
-			go locator.Run()
-
-			return locator, nil
-		},
-		func(value interface{}) error {
-			value.(*docker.Locator).Stop()
-			return nil
-		},
-	).(backend.Locator)
+	Container.Define("docker.service-inspector", func(d *container.Definer) (interface{}, error) {
+		return &docker.ServiceInspector{
+			Client: d.Get("docker.client").(client.APIClient),
+		}, nil
+	})
 }
