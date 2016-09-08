@@ -55,7 +55,7 @@ func init() {
 	Container.Define("frontend.proxy", func(d *container.Definer) (interface{}, error) {
 		return &proxy.Proxy{
 			HTTPProxy:      proxy.NewHTTPProxy(),
-			WebSocketProxy: proxy.NewWebSocketProxy(),
+			WebSocketProxy: &proxy.WebSocketProxy{},
 		}, nil
 	})
 

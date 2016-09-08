@@ -4,6 +4,8 @@ import (
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/icecave/honeycomb/src/transaction"
 )
 
 // isHopByHopHeader checks if a given header name is a Hop-by-Hop header, and
@@ -11,12 +13,7 @@ import (
 // canonicalized with http.CanonicalHeaderKey().
 func isHopByHopHeader(name string) bool {
 	switch name {
-	case "Sec-Websocket-Key",
-		"Sec-Websocket-Version",
-		"Sec-Websocket-Accept",
-
-		// The remaininder header list was lifted from httputil.ReverseProxy
-		// https://golang.org/src/net/http/httputil/reverseproxy.go
+	case
 		"Connection",
 		"Proxy-Connection",
 		"Keep-Alive",
@@ -32,27 +29,22 @@ func isHopByHopHeader(name string) bool {
 	}
 }
 
-// buildBackendHeaders creates a set of headers that are to be forwarded to the
-// backend server for the given request. The X-Forwarded-For header is added.
-func buildBackendHeaders(request *http.Request) http.Header {
-	// @todo add X-Forwarded-Port, X-Forwarded-Proto
+// prepareHeaders creates a set of headers that are to be forwarded to the
+// backend server for the given transaction. The X-Forwarded-For header is added.
+func prepareHeaders(txn *transaction.Transaction) http.Header {
 	headers := http.Header{}
-	hasXForwardedFor := false
-	clientIP, _, _ := net.SplitHostPort(request.RemoteAddr)
+	forwardedFor, _, _ := net.SplitHostPort(txn.Request.RemoteAddr)
 
-	for name, values := range request.Header {
-		if !isHopByHopHeader(name) {
+	for name, values := range txn.Request.Header {
+		if name == "X-Forwarded-For" {
+			forwardedFor = strings.Join(values, ", ") + ", " + forwardedFor
+		} else if !isHopByHopHeader(name) {
 			headers[name] = values
-		} else if !hasXForwardedFor && name == "X-Forwarded-For" {
-			chain := strings.Join(values, ", ") + ", " + clientIP
-			headers.Set(name, chain)
-			hasXForwardedFor = true
 		}
 	}
 
-	if !hasXForwardedFor {
-		headers.Set("X-Forwarded-For", clientIP)
-	}
+	headers["X-Forwarded-For"] = []string{forwardedFor}
+	headers["Host"] = []string{txn.Endpoint.Address}
 
 	return headers
 }

@@ -1,75 +1,111 @@
 package proxy
 
 import (
+	"bufio"
+	"fmt"
+	"io"
+	"net"
 	"net/http"
 
-	"github.com/gorilla/websocket"
 	"github.com/icecave/honeycomb/src/transaction"
 )
 
-// NewWebSocketProxy creates a new proxy that forwards WebSocket requests.
-func NewWebSocketProxy() transaction.Handler {
-	return &webSocketProxy{
-		websocket.DefaultDialer,
-		&websocket.Upgrader{
-			Error: func(
-				writer http.ResponseWriter,
-				_ *http.Request,
-				statusCode int,
-				_ error,
-			) {
-				transaction.WriteStatusPage(writer, statusCode)
-			},
-		},
-	}
-}
-
-type webSocketProxy struct {
-	dialer   *websocket.Dialer
-	upgrader *websocket.Upgrader
-}
+// WebSocketProxy is a transaction.Handler that proxies websocket requests.
+type WebSocketProxy struct{}
 
 // Serve forwards an HTTP request to a specific backend server.
-func (proxy *webSocketProxy) Serve(txn *transaction.Transaction) {
-	// Mangle the incoming request URL to point to the back-end ...
-	url := *txn.Request.URL
-	url.Scheme = txn.Endpoint.GetScheme(true)
-	url.Host = txn.Endpoint.Address
-
-	// Connect to the back-end server ...
-	backend, response, err := proxy.dialer.Dial(
-		url.String(),
-		buildBackendHeaders(txn.Request),
-	)
+func (proxy *WebSocketProxy) Serve(txn *transaction.Transaction) {
+	// Attempt to establish a connection to the server ...
+	backend, err := txn.Endpoint.Dial(txn.Request.Context())
 	if err != nil {
-		transaction.WriteStatusPage(txn.Writer, http.StatusBadGateway)
 		txn.Error = err
 		return
 	}
 	defer backend.Close()
 
-	// Strip out Hop-by-Hop headers from the backend's response to send to the
-	// frontend connection ...
-	upgradeHeaders := http.Header{}
-	for name, values := range response.Header {
-		if !isHopByHopHeader(name) {
-			upgradeHeaders[name] = values
-		}
+	// Forward the request headers from the client to the backend ...
+	err = proxy.sendRequestHeaders(txn, backend)
+	if err != nil {
+		txn.Error = err
+		return
 	}
 
-	// Upgrade the incoming connection to a websocket ...
-	client, err := proxy.upgrader.Upgrade(txn.Writer, txn.Request, upgradeHeaders)
+	// Read the response from the backend ...
+	reader := bufio.NewReader(backend)
+	response, err := http.ReadResponse(reader, nil)
+	if err != nil {
+		txn.Error = err
+		return
+	}
+
+	// Forward the response headers from the backend to the client ...
+	proxy.sendResponseHeaders(txn, response)
+
+	// If we're not switching to a websocket connection, forward the entire
+	// body, then return ...
+	if response.StatusCode != http.StatusSwitchingProtocols {
+		_, txn.Error = io.Copy(txn.Writer, response.Body)
+		return
+	}
+
+	// Otherwise, hijack the client's connection to create a bidirectional pipe
+	// between the client and the backend ...
+	client, _, err := txn.Writer.Hijack()
 	if err != nil {
 		txn.Error = err
 		return
 	}
 	defer client.Close()
 
-	txn.HeadersSent(http.StatusSwitchingProtocols)
+	// Some frame data may have already been read from the backend while reading
+	// the headers, flush any such data first ...
+	if n := reader.Buffered(); n > 0 {
+		_, err := io.CopyN(client, reader, int64(n))
+		if err != nil {
+			txn.Error = err
+			return
+		}
+	}
 
-	// Pipe data between the connections until they're closed ...
-	txn.Error = Pipe(
-		client.UnderlyingConn(),
-		backend.UnderlyingConn(),
+	// Pipe the data ...
+	txn.Error = Pipe(backend, client)
+}
+
+func (proxy *WebSocketProxy) sendRequestHeaders(
+	txn *transaction.Transaction,
+	backend net.Conn,
+) error {
+	_, err := fmt.Fprintf(
+		backend,
+		"GET %s HTTP/1.1\r\n",
+		txn.Request.URL.RequestURI(),
 	)
+	if err != nil {
+		return err
+	}
+
+	headers := prepareHeaders(txn)
+	headers.Set("Connection", "Upgrade")
+	headers.Set("Upgrade", "websocket")
+
+	err = headers.Write(backend)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.WriteString(backend, "\r\n")
+	return err
+}
+
+func (proxy *WebSocketProxy) sendResponseHeaders(
+	txn *transaction.Transaction,
+	response *http.Response,
+) {
+	headers := txn.Writer.Header()
+
+	for name, value := range response.Header {
+		headers[name] = value
+	}
+
+	txn.Writer.WriteHeader(response.StatusCode)
 }

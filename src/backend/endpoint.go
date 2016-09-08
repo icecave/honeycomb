@@ -1,5 +1,11 @@
 package backend
 
+import (
+	"context"
+	"crypto/tls"
+	"net"
+)
+
 // Endpoint holds information about a back-end HTTP(s) server.
 type Endpoint struct {
 	// A human readable description of what the end-point is, not necessarily
@@ -31,4 +37,19 @@ func (endpoint *Endpoint) GetScheme(isWebSocket bool) string {
 	}
 
 	return scheme
+}
+
+// Dial connects to the endpoint using the appropriate dialer.
+func (endpoint *Endpoint) Dial(ctx context.Context) (net.Conn, error) {
+	var dialer net.Dialer
+
+	if endpoint.IsTLS {
+		if deadline, ok := ctx.Deadline(); ok {
+			dialer.Deadline = deadline
+		}
+
+		return tls.DialWithDialer(&dialer, "tcp", endpoint.Address, nil)
+	}
+
+	return dialer.DialContext(ctx, "tcp", endpoint.Address)
 }
