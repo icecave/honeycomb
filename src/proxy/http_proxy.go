@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -11,11 +12,11 @@ import (
 
 // NewHTTPProxy creates a new proxy that forwards non-websocket requests to a
 // back-end server.
-func NewHTTPProxy(logger *log.Logger) transaction.Handler {
+func NewHTTPProxy() transaction.Handler {
 	proxy := &httpProxy{transport: http.DefaultTransport}
 	proxy.reverseProxy = httputil.ReverseProxy{
 		Director:  func(*http.Request) {},
-		ErrorLog:  logger,
+		ErrorLog:  log.New(ioutil.Discard, "", 0),
 		Transport: proxy,
 	}
 

@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -9,7 +8,7 @@ import (
 )
 
 // NewWebSocketProxy creates a new proxy that forwards WebSocket requests.
-func NewWebSocketProxy(logger *log.Logger) transaction.Handler {
+func NewWebSocketProxy() transaction.Handler {
 	return &webSocketProxy{
 		websocket.DefaultDialer,
 		&websocket.Upgrader{
@@ -22,14 +21,12 @@ func NewWebSocketProxy(logger *log.Logger) transaction.Handler {
 				transaction.WriteStatusPage(writer, statusCode)
 			},
 		},
-		logger,
 	}
 }
 
 type webSocketProxy struct {
 	dialer   *websocket.Dialer
 	upgrader *websocket.Upgrader
-	logger   *log.Logger
 }
 
 // Serve forwards an HTTP request to a specific backend server.

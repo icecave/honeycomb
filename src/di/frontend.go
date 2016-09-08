@@ -53,10 +53,9 @@ func init() {
 	})
 
 	Container.Define("frontend.proxy", func(d *container.Definer) (interface{}, error) {
-		logger := d.Get("logger").(*log.Logger)
 		return &proxy.Proxy{
-			HTTPProxy:      proxy.NewHTTPProxy(logger),
-			WebSocketProxy: proxy.NewWebSocketProxy(logger),
+			HTTPProxy:      proxy.NewHTTPProxy(),
+			WebSocketProxy: proxy.NewWebSocketProxy(),
 		}, nil
 	})
 
