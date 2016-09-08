@@ -4,8 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"time"
-
-	"github.com/icecave/honeycomb/src/name"
 )
 
 // DefaultNotBeforeOffset is the default value used for a generator's
@@ -20,5 +18,9 @@ const DefaultNotAfterOffset = 24 * time.Hour
 // Generator creates new TLS certificates.
 type Generator interface {
 	// Generate creates a new TLS certificate for the given server name.
-	Generate(context.Context, name.ServerName) (*tls.Certificate, error)
+	Generate(
+		ctx context.Context,
+		commonName string,
+		dnsName string,
+	) (*tls.Certificate, error)
 }

@@ -8,8 +8,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"time"
-
-	"github.com/icecave/honeycomb/src/name"
 )
 
 // IssuerSignedGenerator generates new server certificates signed by a separate
@@ -41,10 +39,12 @@ type IssuerSignedGenerator struct {
 // Generate creates a new TLS certificate for the given server name.
 func (generator *IssuerSignedGenerator) Generate(
 	ctx context.Context,
-	serverName name.ServerName,
+	commonName string,
+	dnsName string,
 ) (*tls.Certificate, error) {
 	template, err := newTemplateCertificate(
-		serverName,
+		commonName,
+		dnsName,
 		generator.NotBeforeOffset,
 		generator.NotAfterOffset,
 	)

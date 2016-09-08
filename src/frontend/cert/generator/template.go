@@ -6,12 +6,11 @@ import (
 	"crypto/x509/pkix"
 	"math/big"
 	"time"
-
-	"github.com/icecave/honeycomb/src/name"
 )
 
 func newTemplateCertificate(
-	serverName name.ServerName,
+	commonName string,
+	dnsName string,
 	notBeforeOffset time.Duration,
 	notAfterOffset time.Duration,
 ) (*x509.Certificate, error) {
@@ -33,11 +32,11 @@ func newTemplateCertificate(
 
 	return &x509.Certificate{
 		SerialNumber:          serialNumber,
-		Subject:               pkix.Name{CommonName: serverName.Unicode},
+		Subject:               pkix.Name{CommonName: commonName},
 		BasicConstraintsValid: true,
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		DNSNames:              []string{serverName.Punycode},
+		DNSNames:              []string{dnsName},
 		NotBefore:             time.Now().Add(notBeforeOffset),
 		NotAfter:              time.Now().Add(notAfterOffset),
 	}, nil

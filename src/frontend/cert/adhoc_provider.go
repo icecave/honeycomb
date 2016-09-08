@@ -3,7 +3,6 @@ package cert
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -59,17 +58,36 @@ func (provider *AdhocProvider) GetCertificate(
 		return certificate, nil
 	}
 
-	return provider.generate(ctx, serverName)
+	return provider.generate(
+		ctx,
+		serverName.Unicode,
+		serverName,
+	)
 }
 
 // GetDefaultCertificate returns a default certificate to use when the
 // server name is invalid or no SNI information is available.
-func (provider *AdhocProvider) GetDefaultCertificate(_ context.Context) (*tls.Certificate, error) {
-	return nil, errors.New("not implemented")
+func (provider *AdhocProvider) GetDefaultCertificate(ctx context.Context) (*tls.Certificate, error) {
+	serverName := name.ServerName{
+		Unicode:  "*.*",
+		Punycode: "*.*",
+	}
+
+	cache, _ := provider.cache.Load().(certificateCache)
+	if certificate := provider.fetch(cache, serverName); certificate != nil {
+		return certificate, nil
+	}
+
+	return provider.generate(
+		ctx,
+		"Default Certificate",
+		serverName,
+	)
 }
 
 func (provider *AdhocProvider) generate(
 	ctx context.Context,
+	commonName string,
 	serverName name.ServerName,
 ) (*tls.Certificate, error) {
 	provider.mutex.Lock()
@@ -82,7 +100,11 @@ func (provider *AdhocProvider) generate(
 
 	cache = provider.purge(cache)
 
-	certificate, err := provider.Generator.Generate(ctx, serverName)
+	certificate, err := provider.Generator.Generate(
+		ctx,
+		commonName,
+		serverName.Punycode,
+	)
 	if err != nil {
 		return nil, err
 	}

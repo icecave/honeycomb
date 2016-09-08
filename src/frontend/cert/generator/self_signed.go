@@ -7,8 +7,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"time"
-
-	"github.com/icecave/honeycomb/src/name"
 )
 
 // SelfSignedGenerator generates new self-signed server certificates.
@@ -31,10 +29,12 @@ type SelfSignedGenerator struct {
 // Generate creates a new TLS certificate for the given server name.
 func (generator *SelfSignedGenerator) Generate(
 	ctx context.Context,
-	serverName name.ServerName,
+	commonName string,
+	dnsName string,
 ) (*tls.Certificate, error) {
 	template, err := newTemplateCertificate(
-		serverName,
+		commonName,
+		dnsName,
 		generator.NotBeforeOffset,
 		generator.NotAfterOffset,
 	)
