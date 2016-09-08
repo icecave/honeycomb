@@ -18,6 +18,25 @@ docker: artifacts/docker.touch
 deploy: docker
 	docker push "$(DOCKER_REPO):$(DOCKER_TAG)"
 
+.PHONY: docker-services
+docker-services: docker
+	-docker service rm honeycomb honeycomb-echo
+	docker service create \
+		--name honeycomb \
+		--publish 443:8443 \
+		--constraint node.role==manager \
+		--mount type=bind,target=/var/run/docker.sock,source=/var/run/docker.sock \
+		icecave/honeycomb:dev
+	docker service create \
+		--name honeycomb-echo \
+		--network ingress \
+		--label 'honeycomb.match=echo.*' \
+		jmalloc/echo-server
+
+.PHONY: docker-logs
+docker-logs:
+	docker logs -f $(shell docker ps -qf label=com.docker.swarm.service.name=honeycomb)
+
 MINIFY := $(GOPATH)/bin/minify
 $(MINIFY):
 	go get -u github.com/tdewolff/minify/cmd/minify

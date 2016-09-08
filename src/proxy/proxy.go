@@ -19,6 +19,6 @@ func (proxy *Proxy) Serve(txn *transaction.Transaction) {
 	} else if txn.IsWebSocket {
 		proxy.WebSocketProxy.Serve(txn)
 	} else {
-		proxy.WebSocketProxy.Serve(txn)
+		proxy.HTTPProxy.Serve(txn)
 	}
 }

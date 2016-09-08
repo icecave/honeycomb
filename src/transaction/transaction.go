@@ -112,15 +112,15 @@ func (txn *Transaction) Close() {
 // - backend scheme + address
 // - backend description
 // - http status code
-// - time to first byte
-// - time to last byte
 // - bytes inbound
 // - bytes outbound
+// - time to first byte
+// - time to last byte
 // - request information (method, URI and protocol)
 // - message (optional)
 //
 // All fields are always present, except for the message. If a field value is
-// unknown, a hyphen is used in place. If a string value itself contains spaces
+// unknown, a hyphen is used in place. If a field value itself contains spaces
 // or double quotes it is represented as a double-quoted Go string. This allows
 // log output to be parsed programatically.
 func (txn *Transaction) String() string {
