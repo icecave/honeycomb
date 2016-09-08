@@ -1,50 +1,45 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/icecave/honeycomb/src/di"
+	"github.com/icecave/honeycomb/src/frontend/health"
 )
 
 func main() {
 	defer di.Container.Close()
 
-	// check := flag.Bool(
-	// 	"check",
-	// 	false,
-	// 	"Perform a health-check instead of starting the server.",
-	// )
-	//
-	// flag.Parse()
-	//
-	// if len(flag.Args()) != 0 {
-	// 	flag.Usage()
-	// 	os.Exit(1)
-	// }
+	check := flag.Bool(
+		"check",
+		false,
+		"Perform a health-check instead of starting the server.",
+	)
 
-	// success := false
-	// if *check {
-	// 	status := container.HealthChecker().Check()
-	// 	fmt.Println(status.Message)
-	// 	success = status.IsHealthy
-	// } else {
-	// 	success = container.Server().Run() == nil
-	// }
-	//
-	// // @todo logging
-	// svr.Logger.Printf("frontend: %s", err)
-	// svr.Logger.Printf("Listening on %s", svr.BindAddress)
-	//
-	// if !success {
-	// 	os.Exit(1)
-	// }
+	flag.Parse()
 
-	logger := di.Container.Get("logger").(*log.Logger)
-	server := di.Container.Get("frontend.server").(*http.Server)
+	if len(flag.Args()) != 0 {
+		flag.Usage()
+		os.Exit(1)
+	}
 
-	logger.Printf("Listening on %s", server.Addr)
-	if err := server.ListenAndServeTLS("", ""); err != nil {
-		logger.Fatalln(err)
+	if *check {
+		checker := di.Container.Get("docker.health-checker").(health.Checker)
+		status := checker.Check()
+		fmt.Println(status.Message)
+		if !status.IsHealthy {
+			os.Exit(1)
+		}
+	} else {
+		logger := di.Container.Get("logger").(*log.Logger)
+		server := di.Container.Get("frontend.server").(*http.Server)
+		logger.Printf("Listening on %s", server.Addr)
+		if err := server.ListenAndServeTLS("", ""); err != nil {
+			logger.Fatalln(err)
+		}
 	}
 }

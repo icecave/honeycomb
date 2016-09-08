@@ -8,6 +8,7 @@ import (
 	"github.com/docker/engine-api/client"
 	"github.com/icecave/honeycomb/src/di/container"
 	"github.com/icecave/honeycomb/src/docker"
+	"github.com/icecave/honeycomb/src/frontend/health"
 )
 
 func init() {
@@ -34,6 +35,12 @@ func init() {
 	Container.Define("docker.service-inspector", func(d *container.Definer) (interface{}, error) {
 		return &docker.ServiceInspector{
 			Client: d.Get("docker.client").(client.APIClient),
+		}, nil
+	})
+
+	Container.Define("docker.health-checker", func(d *container.Definer) (interface{}, error) {
+		return &health.Client{
+			Address: d.Get("FRONTEND_ADDRESS").(string),
 		}, nil
 	})
 }
