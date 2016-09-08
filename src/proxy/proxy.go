@@ -15,7 +15,7 @@ type Proxy struct {
 // Serve dispatches the transaction to the appropriate proxy.
 func (proxy *Proxy) Serve(txn *transaction.Transaction) {
 	if txn.Endpoint == nil {
-		WriteError(txn.Writer, http.StatusServiceUnavailable)
+		transaction.WriteStatusPage(txn.Writer, http.StatusServiceUnavailable)
 	} else if txn.IsWebSocket {
 		proxy.WebSocketProxy.Serve(txn)
 	} else {

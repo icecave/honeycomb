@@ -1,4 +1,4 @@
-package proxy
+package transaction
 
 import (
 	"html/template"
@@ -8,7 +8,7 @@ import (
 	"github.com/icecave/honeycomb/artifacts/assets"
 )
 
-var errorTemplate *template.Template
+var pageTemplate *template.Template
 var statusMessages = map[int]string{
 	// 4xx
 	http.StatusBadRequest:                  "Your browser has sent a malformed request.",
@@ -34,12 +34,12 @@ var statusMessages = map[int]string{
 }
 
 func init() {
-	errorTemplate = template.New("error")
-	errorTemplate.Parse(assets.Asset_error_page_html)
+	pageTemplate = template.New("status-page")
+	pageTemplate.Parse(assets.STATUS_PAGE)
 }
 
-// WriteError writes an HTML error page to the response.
-func WriteError(
+// WriteStatusPage writes an HTML status page to the response.
+func WriteStatusPage(
 	writer http.ResponseWriter,
 	statusCode int,
 ) {
@@ -56,7 +56,7 @@ func WriteError(
 		StatusMessage(statusCode),
 	}
 
-	err := errorTemplate.Execute(writer, data)
+	err := pageTemplate.Execute(writer, data)
 	if err != nil {
 		io.WriteString(writer, data.Text)
 	}

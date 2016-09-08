@@ -59,7 +59,7 @@ func (proxy *httpProxy) RoundTrip(request *http.Request) (*http.Response, error)
 	if err != nil {
 		txn := request.Context().Value("txn").(*transaction.Transaction)
 		txn.Error = err
-		WriteError(txn.Writer, http.StatusBadGateway)
+		transaction.WriteStatusPage(txn.Writer, http.StatusBadGateway)
 		txn.Close() // close the transaction early so reverse proxy can't send anything
 	}
 

@@ -19,7 +19,7 @@ func NewWebSocketProxy(logger *log.Logger) transaction.Handler {
 				statusCode int,
 				_ error,
 			) {
-				WriteError(writer, statusCode)
+				transaction.WriteStatusPage(writer, statusCode)
 			},
 		},
 		logger,
@@ -45,7 +45,7 @@ func (proxy *webSocketProxy) Serve(txn *transaction.Transaction) {
 		buildBackendHeaders(txn.Request),
 	)
 	if err != nil {
-		WriteError(txn.Writer, http.StatusBadGateway)
+		transaction.WriteStatusPage(txn.Writer, http.StatusBadGateway)
 		txn.Error = err
 		return
 	}

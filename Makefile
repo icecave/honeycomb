@@ -18,11 +18,17 @@ docker: artifacts/docker.touch
 deploy: docker
 	docker push "$(DOCKER_REPO):$(DOCKER_TAG)"
 
-artifacts/assets/%.go: res/assets/%
+MINIFY := $(GOPATH)/bin/minify
+$(MINIFY):
+	go get -u github.com/tdewolff/minify/cmd/minify
+
+artifacts/assets/%.tmp: res/assets/% | $(MINIFY)
+	$(MINIFY) -o "$@" "$<"
+
+artifacts/assets/%.go: artifacts/assets/%.tmp
 	@mkdir -p "$(@D)"
 	@echo "package assets" > "$@"
-	@echo >> "$@"
-	@echo 'const Asset_$(subst .,_,$(notdir $<)) = `' >> "$@"
+	@echo 'const $(shell echo $(basename $*) | tr [:lower:] [:upper:]) = `' >> "$@"
 	cat "$<" >> "$@"
 	@echo '`' >> "$@"
 
