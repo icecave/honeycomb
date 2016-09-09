@@ -8,14 +8,16 @@ MAINTAINER James Harris <james.harris@icecave.com.au>
 
 # Likewise, we can switch back to the "exec" form of HEALTHCHECK once the above
 # fix is released.
-HEALTHCHECK --interval=15s --timeout=500ms CMD honeycomb -check
-ENTRYPOINT ["honeycomb"]
+HEALTHCHECK --interval=15s --timeout=500ms CMD /app/bin/healthcheck -check
+ENTRYPOINT ["/app/bin/honeycomb"]
 
 EXPOSE 8443
 
-ENV PATH             "/bin:$PATH"
-ENV CERTIFICATE_PATH "/etc/certificates"
-ENV STATSD_ADDRESS   "statsd:8125"
+ENV CA_CERT "/app/etc/certificates/ca.crt"
+ENV CA_KEY  "/app/etc/certificates/ca.key"
 
-COPY artifacts/build/release/linux/amd64/honeycomb /bin/honeycomb
-COPY artifacts/certificates /etc/certificates
+ENV SERVER_CERT "/app/etc/certificates/server.crt"
+ENV SERVER_KEY  "/app/etc/certificates/server.key"
+
+COPY artifacts/build/release/linux/amd64/* /app/bin/
+COPY artifacts/certificates                /app/etc/certificates

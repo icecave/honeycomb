@@ -1,4 +1,4 @@
-package health_test
+package statuspage_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestSuite(t *testing.T) {
 	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "Frontend/Health")
+	ginkgo.RunSpecs(t, "statuspage")
 }

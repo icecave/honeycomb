@@ -1,24 +1,14 @@
 package proxy
 
-import (
-	"net/http"
+import "net/http"
 
-	"github.com/icecave/honeycomb/src/transaction"
-)
-
-// Proxy forwards HTTP requests to back-end HTTP servers.
-type Proxy struct {
-	HTTPProxy      transaction.Handler
-	WebSocketProxy transaction.Handler
-}
-
-// Serve dispatches the transaction to the appropriate proxy.
-func (proxy *Proxy) Serve(txn *transaction.Transaction) {
-	if txn.Endpoint == nil {
-		transaction.WriteStatusPage(txn.Writer, http.StatusServiceUnavailable)
-	} else if txn.IsWebSocket {
-		proxy.WebSocketProxy.Serve(txn)
-	} else {
-		proxy.HTTPProxy.Serve(txn)
-	}
+// Proxy is a specialized HTTP handler that forwards to an"upstream" server.
+type Proxy interface {
+	// Forward proxies data between the client and the upstream server.
+	Forward(
+		writer http.ResponseWriter,
+		request *http.Request,
+		upstreamRequest *http.Request,
+		log *LogContext,
+	) error
 }

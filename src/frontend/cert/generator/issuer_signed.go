@@ -21,7 +21,6 @@ type IssuerSignedGenerator struct {
 	IssuerKey crypto.PrivateKey
 
 	// ServerKey is the server's private RSA key.
-	// @todo support other key types
 	ServerKey *rsa.PrivateKey
 
 	// NotBeforeOffset specifies the amount of time added to the current time to

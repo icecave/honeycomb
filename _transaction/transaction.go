@@ -53,11 +53,11 @@ type Transaction struct {
 
 	// BytesIn is the total number of bytes received for this request.
 	// Includes websocket frames, but not HTTP headers.
-	BytesIn int
+	BytesIn int64
 
 	// BytesOut is the total number of bytes sent in response to this
 	// request. Includes websocket frames, but not HTTP headers.
-	BytesOut int
+	BytesOut int64
 }
 
 // NewTransaction creates a new transaction for the given request/response pair.

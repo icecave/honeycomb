@@ -9,5 +9,5 @@ import (
 
 func TestSuite(t *testing.T) {
 	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "Docker")
+	ginkgo.RunSpecs(t, "docker")
 }

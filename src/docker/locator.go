@@ -25,24 +25,6 @@ type Locator struct {
 	services atomic.Value // []ServiceInfo
 }
 
-// NewLocator returns a new Docker locator.
-func NewLocator(
-	pollInterval time.Duration,
-	loader *ServiceLoader,
-	logger *log.Logger,
-) *Locator {
-	if pollInterval == 0 {
-		pollInterval = DefaultPollInterval
-	}
-
-	return &Locator{
-		PollInterval: pollInterval,
-		Loader:       loader,
-		Logger:       logger,
-		done:         make(chan struct{}),
-	}
-}
-
 // Locate finds the back-end HTTP server for the given server name.
 func (locator *Locator) Locate(ctx context.Context, serverName name.ServerName) *backend.Endpoint {
 	if services, ok := locator.services.Load().([]ServiceInfo); ok {
@@ -58,12 +40,21 @@ func (locator *Locator) Locate(ctx context.Context, serverName name.ServerName) 
 
 // Run polls Docker for service information until Stop() is called.
 func (locator *Locator) Run() {
+	if locator.done == nil {
+		locator.done = make(chan struct{})
+	}
+
 	services := locator.load()
 	locator.diff(nil, services)
 
+	pollInterval := locator.PollInterval
+	if pollInterval == 0 {
+		pollInterval = DefaultPollInterval
+	}
+
 	for {
 		select {
-		case <-time.After(locator.PollInterval):
+		case <-time.After(pollInterval):
 			s := locator.load()
 			locator.diff(services, s)
 			services = s

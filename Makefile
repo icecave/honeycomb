@@ -4,14 +4,16 @@ DOCKER_TAG  ?= dev
 CGO_ENABLED = 0
 
 PREREQUISITES := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
-
+CERTIFICATES := $(addprefix artifacts/certificates/,ca.crt ca.key server.crt server.key)
 -include artifacts/build/Makefile.in
 
 .PHONY: run
-run: build artifacts/certificates
-	CERTIFICATE_PATH=artifacts/certificates \
-		$(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb \
-		$$HONEYCOMB_ARGS
+run: $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb $(CERTIFICATES)
+	CA_CERT=artifacts/certificates/ca.crt \
+	CA_KEY=artifacts/certificates/ca.key \
+	SERVER_CERT=artifacts/certificates/server.crt \
+	SERVER_KEY=artifacts/certificates/server.key \
+		$(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb
 
 .PHONY: docker
 docker: artifacts/docker.touch
@@ -44,30 +46,55 @@ $(MINIFY):
 	go get -u github.com/tdewolff/minify/cmd/minify
 
 artifacts/assets/%.tmp: res/assets/% | $(MINIFY)
-	$(MINIFY) -o "$@" "$<"
+	$(MINIFY) -o "$@" "$<" || cp "$<" "$@"
 
 artifacts/assets/%.go: artifacts/assets/%.tmp
 	@mkdir -p "$(@D)"
 	@echo "package assets" > "$@"
-	@echo 'const $(shell echo $(basename $*) | tr [:lower:] [:upper:]) = `' >> "$@"
+	@echo 'const $(shell echo $(notdir $*) | tr [:lower:] [:upper:] | tr . _) = `' >> "$@"
 	cat "$<" >> "$@"
 	@echo '`' >> "$@"
 
-artifacts/certificates:
-	@mkdir -p "$@"
-	openssl genrsa -out "$@/ca.key" 2048
-	openssl genrsa -out "$@/server.key" 2048
+artifacts/certificates/%.key:
+	@mkdir -p "$(@D)"
+	openssl genrsa -out "$@" 2048
+
+artifacts/certificates/%.csr.tmp: artifacts/certificates/%.key
+	openssl req \
+		-new \
+		-sha256 \
+		-subj "/CN=Honeycomb Development ($*)/subjectAltName=DNS.1=*" \
+		-key "$<" \
+		-out "$@"
+
+artifacts/certificates/ca.crt: artifacts/certificates/ca.key
 	openssl req \
 		-new \
 		-x509 \
 		-sha256 \
-		-days 3650 \
+		-days 30 \
 		-extensions v3_ca \
-		-key "$@/ca.key" \
-		-out "$@/ca.crt" \
-		-subj "/CN=Honeycomb Development CA"
+		-nodes \
+		-subj "/CN=Honeycomb Development CA" \
+		-key "$<" \
+		-out "$@"
 
-artifacts/docker.touch: Dockerfile $(BUILD_PATH)/release/linux/amd64/honeycomb artifacts/certificates
+artifacts/certificates/%.crt: artifacts/certificates/%.csr.tmp artifacts/certificates/extensions.cnf.tmp artifacts/certificates/ca.crt artifacts/certificates/ca.key
+	openssl x509 \
+		-req \
+		-sha256 \
+		-days 30 \
+		-extfile artifacts/certificates/extensions.cnf.tmp \
+		-CA artifacts/certificates/ca.crt \
+		-CAkey artifacts/certificates/ca.key \
+		-CAcreateserial \
+		-in "$<" \
+		-out "$@"
+
+artifacts/certificates/extensions.cnf.tmp:
+	echo "extendedKeyUsage = serverAuth" > "$@"
+
+artifacts/docker.touch: Dockerfile $(addprefix $(BUILD_PATH)/release/linux/amd64/,$(BINARIES)) $(CERTIFICATES)
 	docker build -t "$(DOCKER_REPO):$(DOCKER_TAG)" .
 	touch "$@"
 

@@ -45,7 +45,7 @@ func (writer *Writer) Write(data []byte) (int, error) {
 	}
 
 	size, err := writer.Inner.Write(data)
-	writer.Transaction.BytesOut += size
+	writer.Transaction.BytesOut += int64(size)
 
 	return size, err
 }

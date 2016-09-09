@@ -2,110 +2,90 @@ package proxy
 
 import (
 	"bufio"
-	"fmt"
+	"errors"
 	"io"
-	"net"
 	"net/http"
 
-	"github.com/icecave/honeycomb/src/transaction"
+	"github.com/icecave/honeycomb/src/statuspage"
 )
 
-// WebSocketProxy is a transaction.Handler that proxies websocket requests.
-type WebSocketProxy struct{}
+// WebSocketProxy is a proxy that handles WebSocket connections.
+type WebSocketProxy struct {
+	Dialer WebSocketDialer
+}
 
-// Serve forwards an HTTP request to a specific backend server.
-func (proxy *WebSocketProxy) Serve(txn *transaction.Transaction) {
-	// Attempt to establish a connection to the server ...
-	backend, err := txn.Endpoint.Dial(txn.Request.Context())
+// Forward proxies data between the client and the upstream server.
+func (proxy *WebSocketProxy) Forward(
+	writer http.ResponseWriter,
+	request *http.Request,
+	upstreamRequest *http.Request,
+	logContext *LogContext,
+) error {
+	hijacker, ok := writer.(http.Hijacker)
+	if !ok {
+		return errors.New("client connection can not be hijacked")
+	}
+
+	// Connect to theupstream server ...
+	dialer := proxy.Dialer
+	if dialer == nil {
+		dialer = DefaultWebSocketDialer
+	}
+	upstreamConnection, err := dialer.Dial(upstreamRequest)
 	if err != nil {
-		txn.Error = err
-		return
+		return statuspage.Error{Inner: err, StatusCode: http.StatusBadGateway}
 	}
-	defer backend.Close()
+	defer upstreamConnection.Close()
 
-	// Forward the request headers from the client to the backend ...
-	err = proxy.sendRequestHeaders(txn, backend)
+	// Send the HTTP request ...
+	err = writeRequestHeaders(upstreamConnection, upstreamRequest)
 	if err != nil {
-		txn.Error = err
-		return
+		return statuspage.Error{Inner: err, StatusCode: http.StatusBadGateway}
 	}
 
-	// Read the response from the backend ...
-	reader := bufio.NewReader(backend)
-	response, err := http.ReadResponse(reader, nil)
+	// Read the server's http response ...
+	upstreamReader := bufio.NewReader(upstreamConnection)
+	upstreamResponse, err := http.ReadResponse(upstreamReader, upstreamRequest)
 	if err != nil {
-		txn.Error = err
-		return
+		return statuspage.Error{Inner: err, StatusCode: http.StatusBadGateway}
 	}
 
-	// Forward the response headers from the backend to the client ...
-	proxy.sendResponseHeaders(txn, response)
+	logContext.Metrics.FirstByteSent()
+	defer logContext.Metrics.LastByteSent()
 
-	// If we're not switching to a websocket connection, forward the entire
-	// body, then return ...
-	if response.StatusCode != http.StatusSwitchingProtocols {
-		_, txn.Error = io.Copy(txn.Writer, response.Body)
-		return
+	logContext.StatusCode = upstreamResponse.StatusCode
+
+	// If the server is not switching protocols, proxy its response unchanged ...
+	if upstreamResponse.StatusCode != http.StatusSwitchingProtocols {
+		logContext.Metrics.BytesOut, err = writeResponse(writer, upstreamResponse)
+		return err
 	}
 
-	// Otherwise, hijack the client's connection to create a bidirectional pipe
-	// between the client and the backend ...
-	client, _, err := txn.Writer.Hijack()
+	// Otherwise return just the headers, then hijack the connection to proxy
+	// the websocket frames ...
+	writeResponseHeaders(writer, upstreamResponse)
+
+	logContext.Log(nil)
+
+	// @todo read buffered input from client connection before hijacking
+	clientConnection, _, err := hijacker.Hijack()
 	if err != nil {
-		txn.Error = err
-		return
+		return err
 	}
-	defer client.Close()
+	defer clientConnection.Close()
 
-	// Some frame data may have already been read from the backend while reading
-	// the headers, flush any such data first ...
-	if n := reader.Buffered(); n > 0 {
-		_, err := io.CopyN(client, reader, int64(n))
+	// Some frame data may have already been read from the upstream server while
+	// reading the response headers, flush any such data first ...
+	if n := upstreamReader.Buffered(); n > 0 {
+		logContext.Metrics.BytesOut, err = io.CopyN(clientConnection, upstreamReader, int64(n))
 		if err != nil {
-			txn.Error = err
-			return
+			return err
 		}
 	}
 
-	// Pipe the data ...
-	txn.Error = Pipe(backend, client)
-}
+	bytesIn, bytesOut, err := pipe(upstreamConnection, clientConnection)
+	logContext.Metrics.BytesIn += bytesIn
+	logContext.Metrics.BytesOut += bytesOut
 
-func (proxy *WebSocketProxy) sendRequestHeaders(
-	txn *transaction.Transaction,
-	backend net.Conn,
-) error {
-	_, err := fmt.Fprintf(
-		backend,
-		"GET %s HTTP/1.1\r\n",
-		txn.Request.URL.RequestURI(),
-	)
-	if err != nil {
-		return err
-	}
-
-	headers := prepareHeaders(txn)
-	headers.Set("Connection", "Upgrade")
-	headers.Set("Upgrade", "websocket")
-
-	err = headers.Write(backend)
-	if err != nil {
-		return err
-	}
-
-	_, err = io.WriteString(backend, "\r\n")
 	return err
-}
-
-func (proxy *WebSocketProxy) sendResponseHeaders(
-	txn *transaction.Transaction,
-	response *http.Response,
-) {
-	headers := txn.Writer.Header()
-
-	for name, value := range response.Header {
-		headers[name] = value
-	}
-
-	txn.Writer.WriteHeader(response.StatusCode)
 }
