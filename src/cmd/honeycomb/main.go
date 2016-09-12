@@ -57,17 +57,15 @@ func main() {
 		},
 		Handler: &frontend.Handler{
 			Proxy: &proxy.Handler{
-				Router: &backend.Router{
-					Locator: backend.AggregateLocator{
-						backend.StaticLocator{}.With(
-							"static.lvh.me",
-							&backend.Endpoint{
-								Address:     "localhost:8080",
-								Description: "local echo server",
-							},
-						),
-						dockerLocator,
-					},
+				Locator: backend.AggregateLocator{
+					backend.StaticLocator{}.With(
+						"static.lvh.me",
+						&backend.Endpoint{
+							Address:     "localhost:8080",
+							Description: "local echo server",
+						},
+					),
+					dockerLocator,
 				},
 				HTTPProxy:      &proxy.HTTPProxy{},
 				WebSocketProxy: &proxy.WebSocketProxy{},

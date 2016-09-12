@@ -37,6 +37,10 @@ func (proxy *WebSocketProxy) Forward(
 	}
 	defer upstreamConnection.Close()
 
+	// Re-add hop-by-hop headers that are needed for websockets ...
+	upstreamRequest.Header.Set("Connection", "upgrade")
+	upstreamRequest.Header.Set("Upgrade", "websocket")
+
 	// Send the HTTP request ...
 	err = writeRequestHeaders(upstreamConnection, upstreamRequest)
 	if err != nil {
@@ -62,7 +66,7 @@ func (proxy *WebSocketProxy) Forward(
 
 	// Otherwise return just the headers, then hijack the connection to proxy
 	// the websocket frames ...
-	writeResponseHeaders(writer, upstreamResponse)
+	writeResponseHeaders(writer, upstreamResponse, true)
 
 	logContext.Log(nil)
 

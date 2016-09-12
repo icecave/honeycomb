@@ -10,18 +10,18 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	"github.com/golang/gddo/httputil/header"
+	"github.com/icecave/honeycomb/src/backend"
 )
 
 // LogContext holds information about an HTTP request/response transaction used
 // for logging.
 type LogContext struct {
-	Logger          *log.Logger
-	StatusCode      int
-	UpstreamInfo    string
-	IsWebSocket     bool
-	Metrics         Metrics
-	Request         *http.Request
-	UpstreamRequest *http.Request
+	Logger      *log.Logger
+	StatusCode  int
+	IsWebSocket bool
+	Metrics     Metrics
+	Request     *http.Request
+	Endpoint    *backend.Endpoint
 
 	prefixLength int
 	buffer       bytes.Buffer
@@ -158,12 +158,12 @@ func (ctx *LogContext) writePrefix() {
 	ctx.write(ctx.Request.Host)
 
 	// backend + description
-	if ctx.UpstreamRequest == nil {
+	if ctx.Endpoint == nil {
 		ctx.write("")
 		ctx.write("")
 	} else {
-		ctx.write(ctx.UpstreamRequest.URL.Host)
-		ctx.write(ctx.UpstreamInfo)
+		ctx.write(ctx.Endpoint.Address)
+		ctx.write(ctx.Endpoint.Description)
 	}
 
 	// request information

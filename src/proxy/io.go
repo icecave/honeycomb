@@ -27,7 +27,11 @@ func writeRequestHeaders(writer io.Writer, request *http.Request) error {
 }
 
 // writeResponseHeaders writes the headers from response to writer.
-func writeResponseHeaders(writer http.ResponseWriter, response *http.Response) {
+func writeResponseHeaders(
+	writer http.ResponseWriter,
+	response *http.Response,
+	isWebSocket bool,
+) {
 	headers := writer.Header()
 	for name, values := range response.Header {
 		if !isHopByHopHeader(name) {
@@ -35,7 +39,7 @@ func writeResponseHeaders(writer http.ResponseWriter, response *http.Response) {
 		}
 	}
 
-	if isWebSocketUpgrade(response.Header) {
+	if isWebSocket {
 		headers.Set("Connection", "upgrade")
 		headers.Set("Upgrade", "websocket")
 	}
@@ -46,6 +50,6 @@ func writeResponseHeaders(writer http.ResponseWriter, response *http.Response) {
 // writeResponse writes the entirety of response to writer.
 func writeResponse(writer http.ResponseWriter, response *http.Response) (int64, error) {
 	defer response.Body.Close()
-	writeResponseHeaders(writer, response)
+	writeResponseHeaders(writer, response, false)
 	return io.Copy(writer, response.Body)
 }

@@ -1,15 +1,20 @@
 package proxy
 
 import (
+	"errors"
 	"log"
+	"net"
 	"net/http"
+	"strings"
 
+	"github.com/icecave/honeycomb/src/backend"
+	"github.com/icecave/honeycomb/src/name"
 	"github.com/icecave/honeycomb/src/statuspage"
 )
 
 // Handler is an http.Handler that proxies requests to an upstream server.
 type Handler struct {
-	Router           Router
+	Locator          backend.Locator
 	HTTPProxy        Proxy
 	WebSocketProxy   Proxy
 	StatusPageWriter statuspage.Writer
@@ -25,60 +30,26 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 
 	// If there was an error and no response has been sent, send an error page.
 	if err != nil && logContext.StatusCode == 0 {
-		handler.statusPage(writer, request, logContext, err)
+		handler.writeStatusPage(writer, request, logContext, err)
 	}
 
 	logContext.Log(err)
-}
-
-// prepareUpstreamRequest produces an an HTTP request that is used to contact
-// an upstream server, before it is updated by the router.
-func (handler *Handler) prepareRequest(
-	request *http.Request,
-) (upstreamRequest *http.Request, isWebSocket bool) {
-	// shallow copy request
-	{
-		copy := *request
-		upstreamRequest = &copy
-	}
-
-	// Deep-copy (and update) the headers ...
-	upstreamRequest.Header, isWebSocket = prepareUpstreamHeaders(request)
-
-	// Deep copy the URL, including the .User, since it's a pointer ...
-	{
-		copy := *upstreamRequest.URL
-		upstreamRequest.URL = &copy
-		if upstreamRequest.URL.User != nil {
-			copy := *upstreamRequest.URL.User
-			upstreamRequest.URL.User = &copy
-		}
-	}
-
-	return
 }
 
 func (handler *Handler) forward(
 	writer http.ResponseWriter,
 	request *http.Request,
 	logContext *LogContext,
-) error {
-	upstreamRequest, isWebSocket := handler.prepareRequest(request)
-	upstreamInfo, err := handler.Router.Route(
-		request,
-		isWebSocket,
-		upstreamRequest.URL,
-		upstreamRequest.Header,
-	)
-
+) (err error) {
+	isWebSocket := isWebSocketUpgrade(request.Header)
 	logContext.IsWebSocket = isWebSocket
 
+	endpoint, err := handler.locate(request)
 	if err != nil {
-		return err
+		return
 	}
 
-	logContext.UpstreamRequest = upstreamRequest
-	logContext.UpstreamInfo = upstreamInfo
+	logContext.Endpoint = endpoint
 
 	var proxy Proxy
 	if isWebSocket {
@@ -90,12 +61,87 @@ func (handler *Handler) forward(
 	return proxy.Forward(
 		writer,
 		request,
-		upstreamRequest,
+		handler.prepareUpstreamRequest(request, endpoint, isWebSocket),
 		logContext,
 	)
 }
 
-func (handler *Handler) statusPage(
+// locate attempts to use the backend locator to find an endpoint for the given
+// request.
+func (handler *Handler) locate(request *http.Request) (*backend.Endpoint, error) {
+	serverName, err := name.FromHTTP(request)
+	if err != nil {
+		return nil, statuspage.Error{
+			Inner:      err,
+			StatusCode: http.StatusNotFound,
+		}
+	}
+
+	endpoint := handler.Locator.Locate(request.Context(), serverName)
+	if endpoint == nil {
+		return nil, statuspage.Error{
+			Inner:      errors.New("could not locate backend"),
+			StatusCode: http.StatusNotFound,
+		}
+	}
+
+	return endpoint, nil
+}
+
+// prepareUpstreamRequest makes a new http.Request that uses the given endpoint
+// as the upstream server.
+func (handler *Handler) prepareUpstreamRequest(
+	request *http.Request,
+	endpoint *backend.Endpoint,
+	isWebSocket bool,
+) *http.Request {
+	upstreamRequest := *request
+	upstreamRequest.Header = handler.prepareUpstreamHeaders(request)
+
+	upstreamURL := *request.URL
+	upstreamURL.Host = endpoint.Address
+
+	if isWebSocket {
+		if endpoint.IsTLS {
+			upstreamURL.Scheme = "wss"
+		} else {
+			upstreamURL.Scheme = "ws"
+		}
+	} else {
+		if endpoint.IsTLS {
+			upstreamURL.Scheme = "https"
+		} else {
+			upstreamURL.Scheme = "http"
+		}
+	}
+
+	upstreamRequest.URL = &upstreamURL
+
+	return &upstreamRequest
+}
+
+// prepareUpstreamHeaders produces a copy of request.Header and modifies them so
+// that they are suitable to send to the upstream server.
+func (handler *Handler) prepareUpstreamHeaders(request *http.Request) http.Header {
+	upstreamHeaders := http.Header{}
+	forwardedFor, _, _ := net.SplitHostPort(request.RemoteAddr)
+
+	for name, values := range request.Header {
+		if name == "X-Forwarded-For" {
+			forwardedFor = strings.Join(values, ", ") + ", " + forwardedFor
+		} else if !isHopByHopHeader(name) {
+			upstreamHeaders[name] = values
+		}
+	}
+
+	upstreamHeaders.Set("X-Forwarded-For", forwardedFor)
+	upstreamHeaders.Set("Host", request.Host)
+
+	return upstreamHeaders
+}
+
+// writeStatusPage responds with a status page for the given error.
+func (handler *Handler) writeStatusPage(
 	writer http.ResponseWriter,
 	request *http.Request,
 	logContext *LogContext,
