@@ -88,9 +88,9 @@ func (proxy *WebSocketProxy) Forward(
 // pipe sends data between the upstream server and the client, first flushing
 // any data that was buffered while reading the request and response headers.
 func (proxy *WebSocketProxy) pipe(
-	upstreamConnection io.ReadWriter,
+	upstreamConnection io.ReadWriteCloser,
 	upstreamReader *bufio.Reader,
-	clientConnection io.ReadWriter,
+	clientConnection io.ReadWriteCloser,
 	clientReader *bufio.Reader,
 	metrics *Metrics,
 ) error {
@@ -117,7 +117,7 @@ func (proxy *WebSocketProxy) pipe(
 func (proxy *WebSocketProxy) copy(
 	writer io.Writer,
 	buffer *bufio.Reader,
-	reader io.Reader,
+	reader io.ReadCloser,
 ) (int64, error) {
 	bufferedBytes := int64(buffer.Buffered())
 	if bufferedBytes != 0 {
@@ -127,5 +127,7 @@ func (proxy *WebSocketProxy) copy(
 	}
 
 	bytes, err := io.Copy(writer, reader)
+	reader.Close()
+
 	return bufferedBytes + bytes, err
 }
