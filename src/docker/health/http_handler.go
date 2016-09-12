@@ -29,7 +29,7 @@ func (handler *HTTPHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 
 	status := Status{
 		true,
-		"The server is accepting requests, but no health checker is configured.",
+		"The server is accepting requests, but no health-checker is configured.",
 	}
 
 	if handler.Checker != nil {
