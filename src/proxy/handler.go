@@ -36,15 +36,23 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 func (handler *Handler) prepareRequest(
 	request *http.Request,
 ) (upstreamRequest *http.Request, isWebSocket bool) {
-	upstreamRequest = &*request // shallow copy request
+	// shallow copy request
+	{
+		copy := *request
+		upstreamRequest = &copy
+	}
 
 	// Deep-copy (and update) the headers ...
 	upstreamRequest.Header, isWebSocket = prepareUpstreamHeaders(request)
 
 	// Deep copy the URL, including the .User, since it's a pointer ...
-	upstreamRequest.URL = &*upstreamRequest.URL
-	if upstreamRequest.URL.User != nil {
-		upstreamRequest.URL.User = &*upstreamRequest.URL.User
+	{
+		copy := *upstreamRequest.URL
+		upstreamRequest.URL = &copy
+		if upstreamRequest.URL.User != nil {
+			copy := *upstreamRequest.URL.User
+			upstreamRequest.URL.User = &copy
+		}
 	}
 
 	return

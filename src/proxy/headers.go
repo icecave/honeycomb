@@ -4,6 +4,8 @@ import (
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/golang/gddo/httputil/header"
 )
 
 // prepareUpstreamHeaders produces a copy of request.Header and modifies them so that
@@ -36,7 +38,7 @@ func prepareUpstreamHeaders(request *http.Request) (http.Header, bool) {
 // upgrade request or response.
 func isWebSocketUpgrade(headers http.Header) bool {
 	isUpgrade := false
-	for _, value := range headers["Connection"] {
+	for _, value := range header.ParseList(headers, "Connection") {
 		if strings.EqualFold(value, "upgrade") {
 			isUpgrade = true
 			break
@@ -44,7 +46,7 @@ func isWebSocketUpgrade(headers http.Header) bool {
 	}
 
 	if isUpgrade {
-		for _, value := range headers["Upgrade"] {
+		for _, value := range header.ParseList(headers, "Upgrade") {
 			if strings.EqualFold(value, "websocket") {
 				return true
 			}

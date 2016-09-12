@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	humanize "github.com/dustin/go-humanize"
+	"github.com/golang/gddo/httputil/header"
 )
 
 // LogContext holds information about an HTTP request/response transaction used
@@ -22,19 +23,20 @@ type LogContext struct {
 	Request         *http.Request
 	UpstreamRequest *http.Request
 
-	buffer bytes.Buffer
+	prefixLength int
+	buffer       bytes.Buffer
 }
 
 // Log writes a log entry for the context to the logger.
 //
 // The log format consists of the following space separated fields:
 //
-// - event type
 // - remote address
 // - frontent address
 // - backend address
 // - backend description
 // - request information (method, URI and protocol)
+// - event type
 // - http status code
 // - time to first byte
 // - time to last byte
@@ -43,7 +45,7 @@ type LogContext struct {
 // - message (optional)
 //
 // The event types are:
-// - "HTTPS" - regular HTTP request
+// - "HTTP" - regular HTTP request
 // - "WS/CN" - websocket connected
 // - "WS/DC" - websocket disconnected
 //
@@ -56,37 +58,16 @@ func (ctx *LogContext) Log(err error) {
 		return
 	}
 
+	ctx.writePrefix()
+
 	// event type
 	if !ctx.IsWebSocket {
-		ctx.write("HTTPS")
+		ctx.write("HTTP")
 	} else if ctx.Metrics.IsLastByteSent() {
 		ctx.write("WS/DC")
 	} else {
 		ctx.write("WS/CN")
 	}
-
-	// remote address
-	ctx.write(ctx.Request.RemoteAddr)
-
-	// frontend
-	ctx.write(ctx.Request.Host)
-
-	// backend + description
-	if ctx.UpstreamRequest == nil {
-		ctx.write("")
-		ctx.write("")
-	} else {
-		ctx.write(ctx.UpstreamRequest.URL.Host)
-		ctx.write(ctx.UpstreamInfo)
-	}
-
-	// request information
-	ctx.write(
-		"%s %s %s",
-		ctx.Request.Method,
-		ctx.Request.URL.RequestURI(),
-		ctx.Request.Proto,
-	)
 
 	// status code
 	if ctx.StatusCode == 0 {
@@ -135,7 +116,7 @@ func (ctx *LogContext) Log(err error) {
 	}
 
 	ctx.Logger.Println(ctx.buffer.String())
-	ctx.buffer.Reset()
+	ctx.buffer.Truncate(ctx.prefixLength)
 }
 
 // write is a helper function that writes to a string to a buffer, quoting the
@@ -159,6 +140,41 @@ func (ctx *LogContext) write(str string, v ...interface{}) {
 	} else {
 		ctx.buffer.WriteString(str)
 	}
+}
+
+func (ctx *LogContext) writePrefix() {
+	if ctx.prefixLength != 0 {
+		return
+	}
+
+	// remote address
+	var remoteAddr string
+	for _, ip := range header.ParseList(ctx.Request.Header, "X-Forwarded-For") {
+		remoteAddr += ip + ","
+	}
+	ctx.write(remoteAddr + ctx.Request.RemoteAddr)
+
+	// frontend
+	ctx.write(ctx.Request.Host)
+
+	// backend + description
+	if ctx.UpstreamRequest == nil {
+		ctx.write("")
+		ctx.write("")
+	} else {
+		ctx.write(ctx.UpstreamRequest.URL.Host)
+		ctx.write(ctx.UpstreamInfo)
+	}
+
+	// request information
+	ctx.write(
+		"%s %s %s",
+		ctx.Request.Method,
+		ctx.Request.URL.RequestURI(),
+		ctx.Request.Proto,
+	)
+
+	ctx.prefixLength = ctx.buffer.Len()
 }
 
 func (ctx *LogContext) isMuted() bool {
