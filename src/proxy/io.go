@@ -49,31 +49,3 @@ func writeResponse(writer http.ResponseWriter, response *http.Response) (int64, 
 	writeResponseHeaders(writer, response)
 	return io.Copy(writer, response.Body)
 }
-
-// pipe sends data between two read-writers until EOF is reached, returns the
-// bytes inbound and outbound.
-func pipe(upstream io.ReadWriter, client io.ReadWriter) (int64, int64, error) {
-	var bytesIn, bytesOut int64
-
-	results := make(chan error, 2)
-	go func() {
-		var err error
-		bytesIn, err = io.Copy(upstream, client)
-		results <- err
-	}()
-
-	go func() {
-		var err error
-		bytesOut, err = io.Copy(client, upstream)
-		results <- err
-	}()
-
-	err1 := <-results
-	err2 := <-results
-
-	if err1 != nil {
-		return bytesIn, bytesOut, err1
-	}
-
-	return bytesIn, bytesOut, err2
-}

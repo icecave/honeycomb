@@ -26,7 +26,7 @@ func (proxy *WebSocketProxy) Forward(
 		return errors.New("client connection can not be hijacked")
 	}
 
-	// Connect to theupstream server ...
+	// Connect to the upstream server ...
 	dialer := proxy.Dialer
 	if dialer == nil {
 		dialer = DefaultWebSocketDialer
@@ -51,13 +51,12 @@ func (proxy *WebSocketProxy) Forward(
 	}
 
 	logContext.Metrics.FirstByteSent()
-	defer logContext.Metrics.LastByteSent()
-
 	logContext.StatusCode = upstreamResponse.StatusCode
 
 	// If the server is not switching protocols, proxy its response unchanged ...
 	if upstreamResponse.StatusCode != http.StatusSwitchingProtocols {
 		logContext.Metrics.BytesOut, err = writeResponse(writer, upstreamResponse)
+		logContext.Metrics.LastByteSent()
 		return err
 	}
 
@@ -67,25 +66,62 @@ func (proxy *WebSocketProxy) Forward(
 
 	logContext.Log(nil)
 
-	// @todo read buffered input from client connection before hijacking
-	clientConnection, _, err := hijacker.Hijack()
+	clientConnection, clientIO, err := hijacker.Hijack()
 	if err != nil {
 		return err
 	}
 	defer clientConnection.Close()
 
-	// Some frame data may have already been read from the upstream server while
-	// reading the response headers, flush any such data first ...
-	if n := upstreamReader.Buffered(); n > 0 {
-		logContext.Metrics.BytesOut, err = io.CopyN(clientConnection, upstreamReader, int64(n))
-		if err != nil {
-			return err
+	return proxy.pipe(
+		upstreamConnection,
+		upstreamReader,
+		clientConnection,
+		clientIO.Reader,
+		&logContext.Metrics,
+	)
+}
+
+// pipe sends data between the upstream server and the client, first flushing
+// any data that was buffered while reading the request and response headers.
+func (proxy *WebSocketProxy) pipe(
+	upstreamConnection io.ReadWriter,
+	upstreamReader *bufio.Reader,
+	clientConnection io.ReadWriter,
+	clientReader *bufio.Reader,
+	metrics *Metrics,
+) error {
+	done := make(chan error)
+	go func() {
+		bytes, err := proxy.copy(upstreamConnection, clientReader, clientConnection)
+		metrics.BytesIn += bytes
+		done <- err
+	}()
+
+	bytes, err := proxy.copy(clientConnection, upstreamReader, upstreamConnection)
+	metrics.BytesOut += bytes
+	metrics.LastByteSent()
+
+	if e := <-done; e != nil {
+		return e
+	}
+
+	return err
+}
+
+// copy first writes any buffered data from buffer to writer, then from reader
+// until EOF is reached.
+func (proxy *WebSocketProxy) copy(
+	writer io.Writer,
+	buffer *bufio.Reader,
+	reader io.Reader,
+) (int64, error) {
+	bufferedBytes := int64(buffer.Buffered())
+	if bufferedBytes != 0 {
+		if _, err := io.CopyN(writer, buffer, bufferedBytes); err != nil {
+			return bufferedBytes, err
 		}
 	}
 
-	bytesIn, bytesOut, err := pipe(upstreamConnection, clientConnection)
-	logContext.Metrics.BytesIn += bytesIn
-	logContext.Metrics.BytesOut += bytesOut
-
-	return err
+	bytes, err := io.Copy(writer, reader)
+	return bufferedBytes + bytes, err
 }
