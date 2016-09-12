@@ -65,26 +65,6 @@ func (provider *AdhocProvider) GetCertificate(
 	)
 }
 
-// GetDefaultCertificate returns a default certificate to use when the
-// server name is invalid or no SNI information is available.
-func (provider *AdhocProvider) GetDefaultCertificate(ctx context.Context) (*tls.Certificate, error) {
-	serverName := name.ServerName{
-		Unicode:  "*.*",
-		Punycode: "*.*",
-	}
-
-	cache, _ := provider.cache.Load().(certificateCache)
-	if certificate := provider.fetch(cache, serverName); certificate != nil {
-		return certificate, nil
-	}
-
-	return provider.generate(
-		ctx,
-		"Default Certificate",
-		serverName,
-	)
-}
-
 func (provider *AdhocProvider) generate(
 	ctx context.Context,
 	commonName string,

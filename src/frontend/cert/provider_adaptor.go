@@ -45,7 +45,7 @@ func (adaptor *ProviderAdaptor) GetCertificate(
 	// show an HTTP error message to the user ...
 	serverName, err := name.FromTLS(info)
 	if err != nil {
-		return adaptor.SecondaryProvider.GetDefaultCertificate(ctx)
+		return nil, nil
 	}
 
 	// Next, look for an existing certificate from the primary provider. If such

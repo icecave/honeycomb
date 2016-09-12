@@ -18,8 +18,4 @@ type Provider interface {
 	// indicates an error with the provider itself; otherwise, a nil certificate
 	// indicates a failure to find an existing certificate.
 	GetExistingCertificate(context.Context, name.ServerName) (*tls.Certificate, error)
-
-	// GetDefaultCertificate returns a default certificate to use when the
-	// server name is invalid or no SNI information is available.
-	GetDefaultCertificate(context.Context) (*tls.Certificate, error)
 }
