@@ -34,12 +34,12 @@ type LogContext struct {
 // - frontent address
 // - backend address
 // - backend description
+// - request information (method, URI and protocol)
 // - http status code
-// - bytes inbound
-// - bytes outbound
 // - time to first byte
 // - time to last byte
-// - request information (method, URI and protocol)
+// - bytes inbound
+// - bytes outbound
 // - message (optional)
 //
 // The event types are:
@@ -52,7 +52,7 @@ type LogContext struct {
 // field value contains spaces or other special characters it is rendered as a
 // double-quoted Go string. This allows log output to be parsed programatically.
 func (ctx *LogContext) Log(err error) {
-	if ctx.Logger == nil {
+	if ctx.Logger == nil || ctx.isMuted() {
 		return
 	}
 
@@ -80,13 +80,6 @@ func (ctx *LogContext) Log(err error) {
 		ctx.write(ctx.UpstreamInfo)
 	}
 
-	// status code
-	if ctx.StatusCode == 0 {
-		ctx.write("")
-	} else {
-		ctx.write("%d", ctx.StatusCode)
-	}
-
 	// request information
 	ctx.write(
 		"%s %s %s",
@@ -94,6 +87,13 @@ func (ctx *LogContext) Log(err error) {
 		ctx.Request.URL.RequestURI(),
 		ctx.Request.Proto,
 	)
+
+	// status code
+	if ctx.StatusCode == 0 {
+		ctx.write("")
+	} else {
+		ctx.write("%d", ctx.StatusCode)
+	}
 
 	// time to first byte
 	if ctx.Metrics.IsFirstByteSent() {
@@ -159,4 +159,12 @@ func (ctx *LogContext) write(str string, v ...interface{}) {
 	} else {
 		ctx.buffer.WriteString(str)
 	}
+}
+
+func (ctx *LogContext) isMuted() bool {
+	if ctx.Request.URL.Path != "/favicon.ico" {
+		return false
+	}
+
+	return 200 <= ctx.StatusCode && ctx.StatusCode < 500
 }
