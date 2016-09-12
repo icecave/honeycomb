@@ -50,7 +50,7 @@ func (loader *ServiceLoader) Load(
 		}
 
 		loader.Logger.Printf(
-			"docker: Can not route to '%s' (%s), %s",
+			"Can not route to '%s' (%s), %s",
 			service.Spec.Name,
 			service.Spec.TaskTemplate.ContainerSpec.Image,
 			err,

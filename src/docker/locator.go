@@ -75,7 +75,7 @@ func (locator *Locator) load() []ServiceInfo {
 	if err == nil {
 		locator.services.Store(new)
 	} else {
-		locator.Logger.Printf("docker: %s", err)
+		locator.Logger.Println(err)
 	}
 
 	return new
@@ -93,7 +93,7 @@ func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) {
 
 		if log {
 			locator.Logger.Printf(
-				"docker: Removed route from '%s' to '%s' (%s)",
+				"Removed route from '%s' to '%s' (%s)",
 				info.Matcher.Pattern,
 				info.Name,
 				info.Endpoint.Description,
@@ -112,7 +112,7 @@ func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) {
 
 		if log {
 			locator.Logger.Printf(
-				"docker: Added route from '%s' to '%s' (%s)",
+				"Added route from '%s' to '%s' (%s)",
 				info.Matcher.Pattern,
 				info.Name,
 				info.Endpoint.Description,
