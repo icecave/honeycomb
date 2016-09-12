@@ -24,7 +24,10 @@ func (router *Router) Route(
 ) (string, error) {
 	serverName, err := name.FromHTTP(request)
 	if err != nil {
-		return "", err
+		return "", statuspage.Error{
+			Inner:      err,
+			StatusCode: http.StatusNotFound,
+		}
 	}
 
 	endpoint := router.Locator.Locate(request.Context(), serverName)
