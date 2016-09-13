@@ -9,10 +9,7 @@ CERTIFICATES := $(addprefix artifacts/certificates/,ca.crt ca.key server.crt ser
 
 .PHONY: run
 run: $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb $(CERTIFICATES)
-	CA_CERT=artifacts/certificates/ca.crt \
-	CA_KEY=artifacts/certificates/ca.key \
-	SERVER_CERT=artifacts/certificates/server.crt \
-	SERVER_KEY=artifacts/certificates/server.key \
+	CERTIFICATE_PATH=$(CERTIFICATE_PATH:artifacts/certificates) \
 		$(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb
 
 .PHONY: docker
@@ -30,6 +27,10 @@ docker-services: docker
 		--publish 443:8443 \
 		--constraint node.role==manager \
 		--mount type=bind,target=/var/run/docker.sock,source=/var/run/docker.sock \
+		--env CERTIFICATE_S3_BUCKET="$$CERTIFICATE_S3_BUCKET" \
+		--env CERTIFICATE_PATH="/" \
+		--env AWS_ACCESS_KEY_ID="$$AWS_ACCESS_KEY_ID" \
+		--env AWS_SECRET_ACCESS_KEY="$$AWS_SECRET_ACCESS_KEY" \
 		icecave/honeycomb:dev
 	docker service create \
 		--name honeycomb-echo \
@@ -94,7 +95,7 @@ artifacts/certificates/%.crt: artifacts/certificates/%.csr.tmp artifacts/certifi
 artifacts/certificates/extensions.cnf.tmp:
 	echo "extendedKeyUsage = serverAuth" > "$@"
 
-artifacts/docker.touch: Dockerfile $(addprefix $(BUILD_PATH)/release/linux/amd64/,$(BINARIES)) $(CERTIFICATES)
+artifacts/docker.touch: Dockerfile $(addprefix $(BUILD_PATH)/release/linux/amd64/,$(BINARIES))
 	docker build -t "$(DOCKER_REPO):$(DOCKER_TAG)" .
 	touch "$@"
 

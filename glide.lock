@@ -1,5 +1,5 @@
-hash: 1334ad1f295184e5b3cc345f41d21d9b493a7e6eef65d06c83e1e0f842700225
-updated: 2016-09-12T10:15:13.468413309+10:00
+hash: db26cb64570f541da09ad826c9f1d2e91a4cf647824bce98bd3d3a12011d4884
+updated: 2016-09-13T09:21:09.291674121+10:00
 imports:
 - name: github.com/docker/distribution
   version: c24e10f70a554022bf2c6a2a3a766211531efd34
@@ -41,6 +41,8 @@ imports:
   - httputil/header
 - name: github.com/Microsoft/go-winio
   version: ce2922f643c8fd76b46cadc7f404a06282678b34
+- name: github.com/minio/minio-go
+  version: 9f282f76643244430e3d0b69dc7285628a8db8a7
 - name: github.com/onsi/ginkgo
   version: 43e2af1f01ace55adbb6d7d0f30416476db1baae
   subpackages:
