@@ -64,7 +64,7 @@ artifacts/certificates/%.csr.tmp: artifacts/certificates/%.key
 	openssl req \
 		-new \
 		-sha256 \
-		-subj "/CN=Honeycomb Development ($*)/subjectAltName=DNS.1=*" \
+		-subj "/CN=Honeycomb Default Certificate/subjectAltName=DNS.1=*" \
 		-key "$<" \
 		-out "$@"
 
@@ -76,7 +76,7 @@ artifacts/certificates/ca.crt: artifacts/certificates/ca.key
 		-days 30 \
 		-extensions v3_ca \
 		-nodes \
-		-subj "/CN=Honeycomb Development CA" \
+		-subj "/CN=Honeycomb CA" \
 		-key "$<" \
 		-out "$@"
 
