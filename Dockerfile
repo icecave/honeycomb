@@ -19,5 +19,6 @@ ENV CERTIFICATE_PATH      "/"
 ENV CERTIFICATE_S3_BUCKET ""
 ENV AWS_ACCESS_KEY_ID     ""
 ENV AWS_SECRET_ACCESS_KEY ""
+ENV GODEBUG               netdns=cgo
 
 COPY artifacts/build/release/linux/amd64/* /app/bin/
