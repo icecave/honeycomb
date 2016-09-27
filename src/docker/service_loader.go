@@ -4,9 +4,9 @@ import (
 	"context"
 	"log"
 
-	"github.com/docker/docker/client"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 	"github.com/icecave/honeycomb/src/name"
 )
 
