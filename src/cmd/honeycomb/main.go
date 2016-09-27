@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/docker/engine-api/client"
+	"github.com/docker/docker/client"
 	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/cmd"
 	"github.com/icecave/honeycomb/src/docker"
