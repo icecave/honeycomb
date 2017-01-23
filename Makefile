@@ -25,8 +25,7 @@ deploy: docker
 .PHONY: docker-services
 docker-services: docker
 	-docker service rm honeycomb honeycomb-echo
-	-docker network rm honeycomb && sleep 5
-	docker network create --driver=overlay honeycomb
+	-docker network create --driver=overlay honeycomb
 	docker service create \
 		--name honeycomb \
 		--publish 443:8443 \
