@@ -38,7 +38,7 @@ func GetConfigFromEnvironment() *Config {
 		AWSSecretAccessKey: env("AWS_SECRET_ACCESS_KEY", ""),
 
 		Certificates: certificateConfig{
-			BasePath:          env("CERTIFICATE_PATH", "/"),
+			BasePath:          env("CERTIFICATE_PATH", ""),
 			IssuerCertificate: env("ISSUER_CERT", "ca.crt"),
 			IssuerKey:         env("ISSUER_KEY", "ca.key"),
 			ServerCertificate: env("SERVER_CERT", "server.crt"),

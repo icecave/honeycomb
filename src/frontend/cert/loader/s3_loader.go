@@ -51,15 +51,20 @@ func (loader *S3Loader) readPEM(filePath string) ([]byte, error) {
 
 	obj, err := loader.S3Client.GetObject(loader.Bucket, p)
 	if err != nil {
-		if loader.Logger != nil {
-			loader.Logger.Printf(
-				"Unable to load '%s' from '%s' S3 bucket, %s",
-				filePath,
-				loader.Bucket,
-				err,
-			)
-		}
+		loader.logError(p, err)
+		return nil, err
+	}
 
+	raw, err := ioutil.ReadAll(obj)
+	if err != nil {
+		loader.logError(p, err)
+		return nil, err
+	}
+
+	block, unused := pem.Decode(raw)
+	if len(unused) > 0 {
+		err := errors.New("unused data in PEM file")
+		loader.logError(p, err)
 		return nil, err
 	}
 
@@ -71,15 +76,16 @@ func (loader *S3Loader) readPEM(filePath string) ([]byte, error) {
 		)
 	}
 
-	raw, err := ioutil.ReadAll(obj)
-	if err != nil {
-		return nil, err
-	}
-
-	block, unused := pem.Decode(raw)
-	if len(unused) > 0 {
-		return nil, errors.New("unused data in PEM file")
-	}
-
 	return block.Bytes, nil
+}
+
+func (loader *S3Loader) logError(filePath string, err error) {
+	if loader.Logger != nil {
+		loader.Logger.Printf(
+			"Unable to load '%s' from '%s' S3 bucket, %s",
+			filePath,
+			loader.Bucket,
+			err,
+		)
+	}
 }

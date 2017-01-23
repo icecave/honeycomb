@@ -5,11 +5,14 @@ CGO_ENABLED = 0
 
 PREREQUISITES := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
 CERTIFICATES := $(addprefix artifacts/certificates/,ca.crt ca.key server.crt server.key)
+
+CERTIFICATE_PATH ?= artifacts/certificates
+
 -include artifacts/build/Makefile.in
 
 .PHONY: run
 run: $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb $(CERTIFICATES)
-	CERTIFICATE_PATH=$(CERTIFICATE_PATH:artifacts/certificates) \
+	CERTIFICATE_PATH=$(CERTIFICATE_PATH) \
 		$(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb
 
 .PHONY: docker
