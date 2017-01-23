@@ -22,19 +22,22 @@ deploy: docker
 .PHONY: docker-services
 docker-services: docker
 	-docker service rm honeycomb honeycomb-echo
+	-docker network rm honeycomb && sleep 5
+	docker network create --driver=overlay honeycomb
 	docker service create \
 		--name honeycomb \
 		--publish 443:8443 \
 		--constraint node.role==manager \
 		--mount type=bind,target=/var/run/docker.sock,source=/var/run/docker.sock \
 		--env CERTIFICATE_S3_BUCKET="$$CERTIFICATE_S3_BUCKET" \
-		--env CERTIFICATE_PATH="/" \
+		--env CERTIFICATE_PATH="$$CERTIFICATE_PATH" \
 		--env AWS_ACCESS_KEY_ID="$$AWS_ACCESS_KEY_ID" \
 		--env AWS_SECRET_ACCESS_KEY="$$AWS_SECRET_ACCESS_KEY" \
+		--network honeycomb \
 		icecave/honeycomb:dev
 	docker service create \
 		--name honeycomb-echo \
-		--network ingress \
+		--network honeycomb \
 		--label 'honeycomb.match=echo.*' \
 		jmalloc/echo-server
 
