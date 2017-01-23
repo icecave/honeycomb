@@ -15,8 +15,7 @@ import (
 var _ = Describe("HTTPHandler", func() {
 	var (
 		healthCheckURL = "https://localhost/.honeycomb/health-check"
-		// logger         *log.Logger
-		subject *health.HTTPHandler
+		subject        *health.HTTPHandler
 	)
 
 	BeforeEach(func() {

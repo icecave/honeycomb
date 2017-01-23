@@ -1,5 +1,5 @@
 hash: 673b3a1bc56d08f811d522dc7e1dac4467a022b48a468bde8df8784967d7e287
-updated: 2016-09-27T14:20:21.523218226+10:00
+updated: 2017-01-23T10:24:05.875605363+10:00
 imports:
 - name: github.com/docker/distribution
   version: c24e10f70a554022bf2c6a2a3a766211531efd34
@@ -42,7 +42,12 @@ imports:
 - name: github.com/Microsoft/go-winio
   version: ce2922f643c8fd76b46cadc7f404a06282678b34
 - name: github.com/minio/minio-go
-  version: 9f282f76643244430e3d0b69dc7285628a8db8a7
+  version: 52cc94e879db78c2e2c6e160869df943137ec4cd
+  subpackages:
+  - pkg/policy
+  - pkg/s3signer
+  - pkg/s3utils
+  - pkg/set
 - name: github.com/onsi/ginkgo
   version: 46c87bb63f2d8d62b3076873b7a84da124da72ce
   subpackages:

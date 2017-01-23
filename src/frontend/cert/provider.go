@@ -14,7 +14,7 @@ type Provider interface {
 	GetCertificate(context.Context, name.ServerName) (*tls.Certificate, error)
 
 	// GetExistingCertificate attempts to fetch an existing certificate for the
-	// given server name. It never generats new certificates. A non-nil error
+	// given server name. It never generates new certificates. A non-nil error
 	// indicates an error with the provider itself; otherwise, a nil certificate
 	// indicates a failure to find an existing certificate.
 	GetExistingCertificate(context.Context, name.ServerName) (*tls.Certificate, error)
