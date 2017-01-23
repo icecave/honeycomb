@@ -97,7 +97,9 @@ func main() {
 				Logger:         logger,
 			},
 			HealthCheck: &health.HTTPHandler{
-				// Checker: Checker, @todo
+				Checker: &health.SwarmChecker{
+					Client: dockerClient,
+				},
 				Logger: logger,
 			},
 			Logger: logger,
