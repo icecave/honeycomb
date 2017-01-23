@@ -6,6 +6,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/icecave/honeycomb/src/backend"
@@ -33,10 +34,28 @@ func (inspector *ServiceInspector) Inspect(
 	}
 
 	return &backend.Endpoint{
-		Description: service.Spec.TaskTemplate.ContainerSpec.Image,
+		Description: inspector.description(service),
 		Address:     net.JoinHostPort(service.Spec.Name, port),
 		IsTLS:       isTLS,
 	}, nil
+}
+
+func (inspector *ServiceInspector) description(service *swarm.Service) string {
+	if value, ok := service.Spec.Labels[descriptionLabel]; ok {
+		return value
+	}
+
+	image := service.Spec.TaskTemplate.ContainerSpec.Image
+	ref, err := reference.Parse(image)
+	if err != nil {
+		return image
+	}
+
+	if r, ok := ref.(reference.NamedTagged); ok {
+		return fmt.Sprintf("%s:%s", r.Name(), r.Tag())
+	}
+
+	return ref.String()
 }
 
 func (inspector *ServiceInspector) isTLS(
