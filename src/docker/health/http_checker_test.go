@@ -84,7 +84,7 @@ var _ = Describe("HTTPChecker", func() {
 
 			expected := health.Status{
 				IsHealthy: false,
-				Message:   "missing port in address x",
+				Message:   "address x: missing port in address",
 			}
 
 			Expect(subject.Check()).To(Equal(expected))
