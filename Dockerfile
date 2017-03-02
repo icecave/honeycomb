@@ -6,6 +6,7 @@ HEALTHCHECK --interval=15s --timeout=500ms CMD ["/app/bin/healthcheck"]
 ENTRYPOINT ["/app/bin/honeycomb"]
 
 EXPOSE 8443
+EXPOSE 8080
 
 ENV CERTIFICATE_PATH      ""
 ENV CERTIFICATE_S3_BUCKET ""

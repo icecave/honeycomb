@@ -25,9 +25,10 @@ deploy: docker
 .PHONY: docker-services
 docker-services: docker
 	-docker service rm honeycomb honeycomb-echo
-	-docker network create --driver=overlay honeycomb
+	-docker network create --driver=overlay public
 	docker service create \
 		--name honeycomb \
+		--publish 80:8080 \
 		--publish 443:8443 \
 		--constraint node.role==manager \
 		--mount type=bind,target=/var/run/docker.sock,source=/var/run/docker.sock \
@@ -35,11 +36,11 @@ docker-services: docker
 		--env CERTIFICATE_PATH="$$CERTIFICATE_PATH" \
 		--env AWS_ACCESS_KEY_ID="$$AWS_ACCESS_KEY_ID" \
 		--env AWS_SECRET_ACCESS_KEY="$$AWS_SECRET_ACCESS_KEY" \
-		--network honeycomb \
+		--network public \
 		icecave/honeycomb:dev
 	docker service create \
 		--name honeycomb-echo \
-		--network honeycomb \
+		--network public \
 		--label 'honeycomb.match=echo.*' \
 		jmalloc/echo-server
 

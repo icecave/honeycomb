@@ -9,6 +9,7 @@ import (
 // Config holds configuration values for commands.
 type Config struct {
 	Port               string
+	InsecurePort       string
 	DockerPollInterval time.Duration
 
 	AWSAccessKeyID     string
@@ -32,6 +33,7 @@ type certificateConfig struct {
 func GetConfigFromEnvironment() *Config {
 	return &Config{
 		Port:               env("PORT", "8443"),
+		InsecurePort:       env("REDIRECT_PORT", "8080"),
 		DockerPollInterval: time.Duration(envInt("DOCKER_POLL_INTERVAL", 0)) * time.Second,
 
 		AWSAccessKeyID:     env("AWS_ACCESS_KEY_ID", ""),

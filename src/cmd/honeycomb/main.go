@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/docker/docker/client"
-	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/cmd"
 	"github.com/icecave/honeycomb/src/docker"
 	"github.com/icecave/honeycomb/src/docker/health"
@@ -82,16 +81,7 @@ func main() {
 		},
 		Handler: &frontend.Handler{
 			Proxy: &proxy.Handler{
-				Locator: backend.AggregateLocator{
-					backend.StaticLocator{}.With(
-						"static.lvh.me",
-						&backend.Endpoint{
-							Address:     "localhost:8080",
-							Description: "local echo server",
-						},
-					),
-					dockerLocator,
-				},
+				Locator:        dockerLocator,
 				HTTPProxy:      &proxy.HTTPProxy{},
 				WebSocketProxy: &proxy.WebSocketProxy{},
 				Logger:         logger,
@@ -106,6 +96,8 @@ func main() {
 		},
 		ErrorLog: logger,
 	}
+
+	go redirectServer(config)
 
 	logger.Printf("Listening on port %s", config.Port)
 
@@ -173,4 +165,19 @@ func certificateProvider(
 		},
 		Logger: logger,
 	}, nil
+}
+
+func redirectServer(config *cmd.Config) {
+	http.ListenAndServe(
+		":"+config.InsecurePort,
+		http.HandlerFunc(redirectHandler),
+	)
+}
+
+func redirectHandler(w http.ResponseWriter, req *http.Request) {
+	target := "https://" + req.Host + req.URL.Path
+	if len(req.URL.RawQuery) > 0 {
+		target += "?" + req.URL.RawQuery
+	}
+	http.Redirect(w, req, target, http.StatusTemporaryRedirect)
 }
