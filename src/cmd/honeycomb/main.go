@@ -57,7 +57,7 @@ func main() {
 		logger.Fatalln(err)
 	}
 
-	certProvider, err := certificateProvider(
+	secondaryCertProvider, err := secondaryCertificateProvider(
 		logger,
 		certLoader,
 		defaultCertificate.PrivateKey.(*rsa.PrivateKey),
@@ -68,8 +68,8 @@ func main() {
 	}
 
 	providerAdaptor := &cert.ProviderAdaptor{
-		PrimaryProvider:   certProvider,
-		SecondaryProvider: certProvider,
+		PrimaryProvider:   primaryCertificateProvider(certLoader),
+		SecondaryProvider: secondaryCertProvider,
 	}
 
 	server := http.Server{
@@ -135,7 +135,15 @@ func certificateLoader(
 	}, nil
 }
 
-func certificateProvider(
+func primaryCertificateProvider(
+	loader loader.Loader,
+) cert.Provider {
+	return &cert.LoaderProvider{
+		Loader: loader,
+	}
+}
+
+func secondaryCertificateProvider(
 	logger *log.Logger,
 	loader loader.Loader,
 	serverKey *rsa.PrivateKey,
