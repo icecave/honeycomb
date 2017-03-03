@@ -19,8 +19,6 @@ const keyExtension = ".key"
 type LoaderProvider struct {
 	Loader loader.Loader
 
-	// Logger is the destination for messages about certificate generation and
-	// expiry.
 	Logger *log.Logger
 
 	mutex sync.RWMutex
