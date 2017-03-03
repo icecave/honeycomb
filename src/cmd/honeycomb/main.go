@@ -68,7 +68,7 @@ func main() {
 	}
 
 	providerAdaptor := &cert.ProviderAdaptor{
-		PrimaryProvider:   primaryCertificateProvider(certLoader),
+		PrimaryProvider:   primaryCertificateProvider(certLoader, logger),
 		SecondaryProvider: secondaryCertProvider,
 	}
 
@@ -137,9 +137,11 @@ func certificateLoader(
 
 func primaryCertificateProvider(
 	loader loader.Loader,
+	logger *log.Logger,
 ) cert.Provider {
 	return &cert.LoaderProvider{
 		Loader: loader,
+		Logger: logger,
 	}
 }
 
