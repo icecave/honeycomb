@@ -3,7 +3,6 @@ package cert
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"strings"
 
 	"github.com/icecave/honeycomb/src/frontend/cert/loader"
@@ -24,8 +23,8 @@ func (provider *LoaderProvider) GetExistingCertificate(
 	serverName name.ServerName,
 ) (*tls.Certificate, error) {
 	for _, filename := range provider.resolveFilenames(serverName) {
-		if cert, err := provider.Loader.LoadCertificate(ctx, filename+certExtension); err != nil {
-			if key, err := provider.Loader.LoadPrivateKey(ctx, filename+keyExtension); err != nil {
+		if cert, err := provider.Loader.LoadCertificate(ctx, filename+certExtension); err == nil {
+			if key, err := provider.Loader.LoadPrivateKey(ctx, filename+keyExtension); err == nil {
 				return &tls.Certificate{
 					Certificate: [][]byte{cert.Raw},
 					PrivateKey:  key,
@@ -35,7 +34,7 @@ func (provider *LoaderProvider) GetExistingCertificate(
 		}
 	}
 
-	return nil, errors.New("certificate not found")
+	return nil, nil
 }
 
 // GetCertificate returns the certificate for the given server name. If the
