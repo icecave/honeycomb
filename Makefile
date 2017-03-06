@@ -19,7 +19,7 @@ run: $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb $(CERTIFICATES)
 docker: artifacts/docker.touch
 
 .PHONY: deploy
-deploy: docker
+publish: docker
 	docker push "$(DOCKER_REPO):$(DOCKER_TAG)"
 
 .PHONY: docker-services
@@ -32,10 +32,10 @@ docker-services: docker
 		--publish 443:8443 \
 		--constraint node.role==manager \
 		--mount type=bind,target=/var/run/docker.sock,source=/var/run/docker.sock \
-		--env CERTIFICATE_S3_BUCKET="$$CERTIFICATE_S3_BUCKET" \
-		--env CERTIFICATE_PATH="$$CERTIFICATE_PATH" \
-		--env AWS_ACCESS_KEY_ID="$$AWS_ACCESS_KEY_ID" \
-		--env AWS_SECRET_ACCESS_KEY="$$AWS_SECRET_ACCESS_KEY" \
+		--secret honeycomb-ca.crt \
+		--secret honeycomb-ca.key \
+		--secret honeycomb-server.crt \
+		--secret honeycomb-server.key \
 		--network public \
 		icecave/honeycomb:dev
 	docker service create \

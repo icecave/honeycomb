@@ -40,11 +40,11 @@ func GetConfigFromEnvironment() *Config {
 		AWSSecretAccessKey: env("AWS_SECRET_ACCESS_KEY", ""),
 
 		Certificates: certificateConfig{
-			BasePath:          env("CERTIFICATE_PATH", ""),
-			IssuerCertificate: env("ISSUER_CERT", "ca.crt"),
-			IssuerKey:         env("ISSUER_KEY", "ca.key"),
-			ServerCertificate: env("SERVER_CERT", "server.crt"),
-			ServerKey:         env("SERVER_KEY", "server.key"),
+			BasePath:          env("CERTIFICATE_PATH", "/run/secrets/"),
+			IssuerCertificate: env("ISSUER_CERT", "honeycomb-ca.crt"),
+			IssuerKey:         env("ISSUER_KEY", "honeycomb-ca.key"),
+			ServerCertificate: env("SERVER_CERT", "honeycomb-server.crt"),
+			ServerKey:         env("SERVER_KEY", "honeycomb-server.key"),
 			S3Bucket:          env("CERTIFICATE_S3_BUCKET", ""),
 			S3Endpoint:        env("CERTIFICATE_S3_ENDPOINT", "s3.amazonaws.com"),
 		},
