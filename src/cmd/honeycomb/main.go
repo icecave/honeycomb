@@ -60,13 +60,16 @@ func main() {
 		SecondaryProvider: secondaryCertProvider,
 	}
 
+	tlsConfig := &tls.Config{
+		GetCertificate: providerAdaptor.GetCertificate,
+		Certificates:   []tls.Certificate{*defaultCertificate},
+	}
+
+	prepareTLSConfig(tlsConfig)
+
 	server := http.Server{
-		Addr: ":" + config.Port,
-		TLSConfig: &tls.Config{
-			NextProtos:     []string{"h2"},
-			GetCertificate: providerAdaptor.GetCertificate,
-			Certificates:   []tls.Certificate{*defaultCertificate},
-		},
+		Addr:      ":" + config.Port,
+		TLSConfig: tlsConfig,
 		Handler: &frontend.Handler{
 			Proxy: &proxy.Handler{
 				Locator:        dockerLocator,
@@ -144,6 +147,13 @@ func secondaryCertificateProvider(
 		},
 		Logger: logger,
 	}, nil
+}
+
+func prepareTLSConfig(config *tls.Config) {
+	config.NextProtos = []string{"h2"}
+	config.MinVersion = tls.VersionTLS10
+	config.PreferServerCipherSuites = true
+	config.CurvePreferences = []tls.CurveID{tls.CurveP256, tls.CurveP384, tls.CurveP521}
 }
 
 func redirectServer(config *cmd.Config) {

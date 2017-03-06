@@ -44,6 +44,8 @@ func writeResponseHeaders(
 		headers.Set("Upgrade", "websocket")
 	}
 
+	headers.Set("Strict-Transport-Security", "max-age=15768000")
+
 	writer.WriteHeader(response.StatusCode)
 }
 
