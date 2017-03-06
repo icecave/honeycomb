@@ -16,9 +16,9 @@ run: $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb $(CERTIFICATES)
 		$(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb
 
 .PHONY: docker
-docker: artifacts/docker.touch
+docker: artifacts/docker-$(DOCKER_TAG).touch
 
-.PHONY: deploy
+.PHONY: publish
 publish: docker
 	docker push "$(DOCKER_REPO):$(DOCKER_TAG)"
 
@@ -97,7 +97,7 @@ artifacts/certificates/%.crt: artifacts/certificates/%.csr.tmp artifacts/certifi
 artifacts/certificates/extensions.cnf.tmp:
 	echo "extendedKeyUsage = serverAuth" > "$@"
 
-artifacts/docker.touch: Dockerfile $(addprefix $(BUILD_PATH)/release/linux/amd64/,$(BINARIES))
+artifacts/docker-$(DOCKER_TAG).touch: Dockerfile $(addprefix $(BUILD_PATH)/release/linux/amd64/,$(BINARIES))
 	docker build -t "$(DOCKER_REPO):$(DOCKER_TAG)" .
 	touch "$@"
 
