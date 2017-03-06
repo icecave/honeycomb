@@ -1,55 +1,55 @@
-hash: 673b3a1bc56d08f811d522dc7e1dac4467a022b48a468bde8df8784967d7e287
-updated: 2017-01-23T10:24:05.875605363+10:00
+hash: 8675e4f8dbf411b1e0a8ff8f5c7e8726bcf763b73925542f939156144ea92752
+updated: 2017-03-07T08:23:48.019048982+10:00
 imports:
 - name: github.com/docker/distribution
-  version: c24e10f70a554022bf2c6a2a3a766211531efd34
+  version: 50133d63723f8fa376e632a853739990a133be16
   subpackages:
-  - digest
+  - digestset
   - reference
 - name: github.com/docker/docker
-  version: 33466024e73e95e175619170be5d9e36e800b961
+  version: 91f11437b6d62a753d68a4291fc68ecd0c029ee1
   subpackages:
+  - api
   - api/types
   - api/types/blkiodev
   - api/types/container
   - api/types/events
   - api/types/filters
+  - api/types/image
   - api/types/mount
   - api/types/network
-  - api/types/reference
   - api/types/registry
   - api/types/strslice
   - api/types/swarm
   - api/types/time
   - api/types/versions
+  - api/types/volume
   - client
+  - pkg/ioutils
+  - pkg/longpath
+  - pkg/system
   - pkg/tlsconfig
 - name: github.com/docker/go-connections
-  version: 0bad1a3951398f88ef4dd75fdb42af374430be89
+  version: a2afab9802043837035592f1c24827fb70766de9
   subpackages:
   - nat
   - sockets
   - tlsconfig
 - name: github.com/docker/go-units
-  version: 0bbddae09c5a5419a8c6dcdd7ff90da3d450393b
+  version: 0dadbb0345b35ec7ef35e228dabb8de89a65bf52
+- name: github.com/docker/libtrust
+  version: aabc10ec26b754e797f9028f4589c5b7bd90dc20
 - name: github.com/dustin/go-humanize
-  version: 2fcb5204cdc65b4bec9fd0a87606bb0d0e3c54e8
+  version: 259d2a102b871d17f30e3cd9881a642961a1e486
 - name: github.com/golang/gddo
-  version: aa8084e58a66f26ac6f479a75f0da68ed2067d4e
+  version: 13f8d77bb721c2cd340cc84e1c569629dab9abfd
   subpackages:
   - httputil
   - httputil/header
 - name: github.com/Microsoft/go-winio
-  version: ce2922f643c8fd76b46cadc7f404a06282678b34
-- name: github.com/minio/minio-go
-  version: 52cc94e879db78c2e2c6e160869df943137ec4cd
-  subpackages:
-  - pkg/policy
-  - pkg/s3signer
-  - pkg/s3utils
-  - pkg/set
+  version: fff283ad5116362ca252298cfc9b95828956d85d
 - name: github.com/onsi/ginkgo
-  version: 46c87bb63f2d8d62b3076873b7a84da124da72ce
+  version: bb93381d543b0e5725244abe752214a110791d01
   subpackages:
   - config
   - extensions/table
@@ -66,9 +66,11 @@ imports:
   - internal/writer
   - reporters
   - reporters/stenographer
+  - reporters/stenographer/support/go-colorable
+  - reporters/stenographer/support/go-isatty
   - types
 - name: github.com/onsi/gomega
-  version: d59fa0ac68bb5dd932ee8d24eed631cdd519efc3
+  version: c463cd2a8578290d4be7a25cba69de81cf35785e
   subpackages:
   - format
   - internal/assertion
@@ -81,26 +83,24 @@ imports:
   - matchers/support/goraph/node
   - matchers/support/goraph/util
   - types
-- name: github.com/opencontainers/runc
-  version: b4ffe2974db985c205b23ee8d300cc148b494218
-  subpackages:
-  - libcontainer/user
+- name: github.com/opencontainers/go-digest
+  version: aa2ec055abd10d26d539eb630a92241b781ce4bc
 - name: github.com/pkg/errors
-  version: a887431f7f6ef7687b556dbf718d9f351d4858a0
+  version: bfd5150e4e41705ded2129ec33379de1cb90b513
 - name: github.com/Sirupsen/logrus
-  version: 55eb11d21d2a31a3cc93838241d04800f52e823d
+  version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
 - name: golang.org/x/net
-  version: 4f2fc6c1e69d41baf187332ee08fbd2b296f21ed
+  version: 906cda9512f77671ab44f8c8563b13a8e707b230
   subpackages:
   - context
   - context/ctxhttp
   - idna
   - proxy
 - name: golang.org/x/sys
-  version: d9157a9621b69ad1d8d77a1933590c416593f24f
+  version: 075e574b89e4c2d22f2286a7e2b919519c6f3547
   subpackages:
   - unix
   - windows
 testImports:
 - name: gopkg.in/yaml.v2
-  version: e4d366fc3c7938e2958e662b4258c7a89e1f0e3e
+  version: a3f3340b5840cee44f372bddb5880fcbc419b46a

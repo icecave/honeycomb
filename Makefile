@@ -4,7 +4,7 @@ DOCKER_TAG  ?= dev
 CGO_ENABLED = 0
 
 PREREQUISITES := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
-CERTIFICATES := $(addprefix artifacts/certificates/,ca.crt ca.key server.crt server.key)
+CERTIFICATES := $(addprefix artifacts/certificates/honeycomb-,ca.crt ca.key server.crt server.key)
 
 CERTIFICATE_PATH ?= artifacts/certificates
 
@@ -44,10 +44,6 @@ docker-services: docker
 		--label 'honeycomb.match=echo.*' \
 		jmalloc/echo-server
 
-.PHONY: docker-logs
-docker-logs:
-	docker logs -f $(shell docker ps -qf label=com.docker.swarm.service.name=honeycomb)
-
 MINIFY := $(GOPATH)/bin/minify
 $(MINIFY):
 	go get -u github.com/tdewolff/minify/cmd/minify
@@ -74,7 +70,7 @@ artifacts/certificates/%.csr.tmp: artifacts/certificates/%.key
 		-key "$<" \
 		-out "$@"
 
-artifacts/certificates/ca.crt: artifacts/certificates/ca.key
+artifacts/certificates/honeycomb-ca.crt: artifacts/certificates/honeycomb-ca.key
 	openssl req \
 		-new \
 		-x509 \
@@ -86,14 +82,14 @@ artifacts/certificates/ca.crt: artifacts/certificates/ca.key
 		-key "$<" \
 		-out "$@"
 
-artifacts/certificates/%.crt: artifacts/certificates/%.csr.tmp artifacts/certificates/extensions.cnf.tmp artifacts/certificates/ca.crt artifacts/certificates/ca.key
+artifacts/certificates/%.crt: artifacts/certificates/%.csr.tmp artifacts/certificates/extensions.cnf.tmp artifacts/certificates/honeycomb-ca.crt artifacts/certificates/honeycomb-ca.key
 	openssl x509 \
 		-req \
 		-sha256 \
 		-days 30 \
 		-extfile artifacts/certificates/extensions.cnf.tmp \
-		-CA artifacts/certificates/ca.crt \
-		-CAkey artifacts/certificates/ca.key \
+		-CA artifacts/certificates/honeycomb-ca.crt \
+		-CAkey artifacts/certificates/honeycomb-ca.key \
 		-CAcreateserial \
 		-in "$<" \
 		-out "$@"

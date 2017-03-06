@@ -18,5 +18,3 @@ import:
   subpackages:
   - httputil
 - package: github.com/dustin/go-humanize
-- package: github.com/minio/minio-go
-  version: ^2.0.1

@@ -24,7 +24,7 @@ func (loader *ServiceLoader) Load(
 ) ([]ServiceInfo, error) {
 	filter := filters.NewArgs()
 	filter.Add("label", matchLabel)
-	options := types.ServiceListOptions{Filter: filter}
+	options := types.ServiceListOptions{Filters: filter}
 
 	services, err := loader.Client.ServiceList(ctx, options)
 	if err != nil {

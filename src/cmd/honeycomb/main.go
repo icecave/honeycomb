@@ -1,12 +1,13 @@
 package main
 
 import (
-	"context"
 	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
 	"log"
 	"net/http"
 	"os"
+	"path"
 
 	"github.com/docker/docker/client"
 	"github.com/icecave/honeycomb/src/cmd"
@@ -15,9 +16,7 @@ import (
 	"github.com/icecave/honeycomb/src/frontend"
 	"github.com/icecave/honeycomb/src/frontend/cert"
 	"github.com/icecave/honeycomb/src/frontend/cert/generator"
-	"github.com/icecave/honeycomb/src/frontend/cert/loader"
 	"github.com/icecave/honeycomb/src/proxy"
-	minio "github.com/minio/minio-go"
 )
 
 func main() {
@@ -42,26 +41,15 @@ func main() {
 	go dockerLocator.Run()
 	defer dockerLocator.Stop()
 
-	certLoader, err := certificateLoader(logger, config)
-	if err != nil {
-		logger.Fatalln(err)
-	}
-
-	defaultCertificate, err := loader.LoadX509KeyPair(
-		context.Background(),
-		certLoader,
-		config.Certificates.ServerCertificate,
-		config.Certificates.ServerKey,
-	)
+	defaultCertificate, err := loadDefaultCertificate(config)
 	if err != nil {
 		logger.Fatalln(err)
 	}
 
 	secondaryCertProvider, err := secondaryCertificateProvider(
-		logger,
-		certLoader,
-		defaultCertificate.PrivateKey.(*rsa.PrivateKey),
 		config,
+		defaultCertificate.PrivateKey.(*rsa.PrivateKey),
+		logger,
 	)
 	if err != nil {
 		logger.Fatalln(err)
@@ -107,32 +95,15 @@ func main() {
 	}
 }
 
-func certificateLoader(
-	logger *log.Logger,
-	config *cmd.Config,
-) (loader.Loader, error) {
-	if config.Certificates.S3Bucket == "" {
-		return &loader.FileLoader{
-			BasePath: config.Certificates.BasePath,
-		}, nil
-	}
-
-	s3client, err := minio.New(
-		config.Certificates.S3Endpoint,
-		config.AWSAccessKeyID,
-		config.AWSSecretAccessKey,
-		true, // secure
+func loadDefaultCertificate(config *cmd.Config) (*tls.Certificate, error) {
+	cert, err := tls.LoadX509KeyPair(
+		path.Join(config.Certificates.BasePath, config.Certificates.ServerCertificate),
+		path.Join(config.Certificates.BasePath, config.Certificates.ServerKey),
 	)
 	if err != nil {
 		return nil, err
 	}
-
-	return &loader.S3Loader{
-		Bucket:   config.Certificates.S3Bucket,
-		BasePath: config.Certificates.BasePath,
-		S3Client: s3client,
-		Logger:   logger,
-	}, nil
+	return &cert, err
 }
 
 func primaryCertificateProvider(
@@ -146,31 +117,29 @@ func primaryCertificateProvider(
 }
 
 func secondaryCertificateProvider(
-	logger *log.Logger,
-	loader loader.Loader,
-	serverKey *rsa.PrivateKey,
 	config *cmd.Config,
+	serverKey *rsa.PrivateKey,
+	logger *log.Logger,
 ) (cert.Provider, error) {
-	issuerCertificate, err := loader.LoadCertificate(
-		context.Background(),
-		config.Certificates.IssuerCertificate,
+	issuer, err := tls.LoadX509KeyPair(
+		path.Join(config.Certificates.BasePath, config.Certificates.IssuerCertificate),
+		path.Join(config.Certificates.BasePath, config.Certificates.IssuerKey),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	issuerKey, err := loader.LoadPrivateKey(
-		context.Background(),
-		config.Certificates.IssuerKey,
-	)
+	x509Cert, err := x509.ParseCertificate(issuer.Certificate[0])
 	if err != nil {
 		return nil, err
 	}
+
+	issuer.Leaf = x509Cert
 
 	return &cert.AdhocProvider{
 		Generator: &generator.IssuerSignedGenerator{
-			IssuerCertificate: issuerCertificate,
-			IssuerKey:         issuerKey,
+			IssuerCertificate: issuer.Leaf,
+			IssuerKey:         issuer.PrivateKey.(*rsa.PrivateKey),
 			ServerKey:         serverKey,
 		},
 		Logger: logger,
