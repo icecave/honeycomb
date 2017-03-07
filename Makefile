@@ -97,7 +97,7 @@ artifacts/certificates/%.crt: artifacts/certificates/%.csr.tmp artifacts/certifi
 artifacts/certificates/extensions.cnf.tmp:
 	echo "extendedKeyUsage = serverAuth" > "$@"
 
-artifacts/docker-$(DOCKER_TAG).touch: Dockerfile $(addprefix $(BUILD_PATH)/release/linux/amd64/,$(BINARIES))
+artifacts/docker-$(DOCKER_TAG).touch: Dockerfile artifacts/cacert.pem $(addprefix $(BUILD_PATH)/release/linux/amd64/,$(BINARIES))
 	docker build -t "$(DOCKER_REPO):$(DOCKER_TAG)" .
 	touch "$@"
 
@@ -105,3 +105,6 @@ artifacts/build/Makefile.in:
 	mkdir -p "$(@D)"
 	curl -Lo "$(@D)/runtime.go" https://raw.githubusercontent.com/icecave/make/master/go/runtime.go
 	curl -Lo "$@" https://raw.githubusercontent.com/icecave/make/master/go/Makefile.in
+
+artifacts/cacert.pem:
+	curl -L -o "$@" http://curl.haxx.se/ca/cacert.pem
