@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"log"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -34,27 +35,38 @@ func (loader *ServiceLoader) Load(
 	var result []ServiceInfo
 
 	for _, service := range services {
-		var err error
-		info := ServiceInfo{Name: service.Spec.Name}
-
-		info.Matcher, err = name.NewMatcher(
-			service.Spec.Annotations.Labels[matchLabel],
-		)
-
-		if err == nil {
-			info.Endpoint, err = loader.Inspector.Inspect(ctx, &service)
-			if err == nil {
-				result = append(result, info)
-				continue
-			}
+		endpoint, err := loader.Inspector.Inspect(ctx, &service)
+		if err != nil {
+			loader.Logger.Printf(
+				"Can not route to '%s' (%s), %s",
+				service.Spec.Name,
+				service.Spec.TaskTemplate.ContainerSpec.Image,
+				err,
+			)
+			continue
 		}
 
-		loader.Logger.Printf(
-			"Can not route to '%s' (%s), %s",
-			service.Spec.Name,
-			service.Spec.TaskTemplate.ContainerSpec.Image,
-			err,
-		)
+		for key, value := range service.Spec.Annotations.Labels {
+			if key == matchLabel || strings.HasPrefix(key, matchLabel+".") {
+				matcher, err := name.NewMatcher(value)
+
+				if err != nil {
+					loader.Logger.Printf(
+						"Can not route to '%s' (%s) via '%s', %s",
+						service.Spec.Name,
+						service.Spec.TaskTemplate.ContainerSpec.Image,
+						value,
+						err,
+					)
+				} else {
+					result = append(result, ServiceInfo{
+						Name:     service.Spec.Name,
+						Matcher:  matcher,
+						Endpoint: endpoint,
+					})
+				}
+			}
+		}
 	}
 
 	return result, nil

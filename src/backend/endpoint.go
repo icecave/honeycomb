@@ -6,7 +6,7 @@ type Endpoint struct {
 	// unique to this endpoint.
 	Description string
 
-	// Address hosts the network address of the back-end server, including the
+	// Address holds the network address of the back-end server, including the
 	// port number or name.
 	Address string
 
