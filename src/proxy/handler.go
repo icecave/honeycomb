@@ -96,7 +96,7 @@ func (handler *Handler) prepareUpstreamRequest(
 	isWebSocket bool,
 ) *http.Request {
 	upstreamRequest := *request
-	upstreamRequest.Header = handler.prepareUpstreamHeaders(request)
+	upstreamRequest.Header = handler.prepareUpstreamHeaders(request, isWebSocket)
 
 	upstreamURL := *request.URL
 	upstreamURL.Host = endpoint.Address
@@ -122,7 +122,7 @@ func (handler *Handler) prepareUpstreamRequest(
 
 // prepareUpstreamHeaders produces a copy of request.Header and modifies them so
 // that they are suitable to send to the upstream server.
-func (handler *Handler) prepareUpstreamHeaders(request *http.Request) http.Header {
+func (handler *Handler) prepareUpstreamHeaders(request *http.Request, isWebSocket bool) http.Header {
 	upstreamHeaders := http.Header{}
 	forwardedFor, _, _ := net.SplitHostPort(request.RemoteAddr)
 
@@ -134,8 +134,15 @@ func (handler *Handler) prepareUpstreamHeaders(request *http.Request) http.Heade
 		}
 	}
 
-	upstreamHeaders.Set("X-Forwarded-For", forwardedFor)
 	upstreamHeaders.Set("Host", request.Host)
+	upstreamHeaders.Set("X-Forwarded-For", forwardedFor)
+	upstreamHeaders.Set("X-Forwarded-SSL", "on")
+
+	if isWebSocket {
+		upstreamHeaders.Set("X-Forwarded-Proto", "wss")
+	} else {
+		upstreamHeaders.Set("X-Forwarded-Proto", "https")
+	}
 
 	return upstreamHeaders
 }
