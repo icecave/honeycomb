@@ -5,21 +5,22 @@ import (
 
 	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/name"
+	"github.com/icecave/honeycomb/src/static"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("AggregateLocator", func() {
 	var (
-		static1, static2 backend.StaticLocator
+		static1, static2 static.Locator
 		subject          backend.AggregateLocator
 	)
 
 	BeforeEach(func() {
-		static1 = backend.StaticLocator{}.
+		static1 = static.Locator{}.
 			With("foo", &backend.Endpoint{Address: "static1-foo:443"})
 
-		static2 = backend.StaticLocator{}.
+		static2 = static.Locator{}.
 			With("foo", &backend.Endpoint{Address: "static2-foo:443"}).
 			With("bar", &backend.Endpoint{Address: "static2-bar:443"})
 

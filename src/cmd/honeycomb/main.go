@@ -10,6 +10,7 @@ import (
 	"path"
 
 	"github.com/docker/docker/client"
+	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/cmd"
 	"github.com/icecave/honeycomb/src/docker"
 	"github.com/icecave/honeycomb/src/docker/health"
@@ -17,11 +18,17 @@ import (
 	"github.com/icecave/honeycomb/src/frontend/cert"
 	"github.com/icecave/honeycomb/src/frontend/cert/generator"
 	"github.com/icecave/honeycomb/src/proxy"
+	"github.com/icecave/honeycomb/src/static"
 )
 
 func main() {
 	config := cmd.GetConfigFromEnvironment()
 	logger := log.New(os.Stdout, "", log.LstdFlags)
+
+	staticLocator, err := static.FromEnv(logger)
+	if err != nil {
+		logger.Fatalln(err)
+	}
 
 	dockerClient, err := client.NewEnvClient()
 	if err != nil {
@@ -40,6 +47,11 @@ func main() {
 	}
 	go dockerLocator.Run()
 	defer dockerLocator.Stop()
+
+	locator := backend.AggregateLocator{
+		staticLocator,
+		dockerLocator,
+	}
 
 	defaultCertificate, err := loadDefaultCertificate(config)
 	if err != nil {
@@ -72,7 +84,7 @@ func main() {
 		TLSConfig: tlsConfig,
 		Handler: &frontend.Handler{
 			Proxy: &proxy.Handler{
-				Locator:        dockerLocator,
+				Locator:        locator,
 				HTTPProxy:      &proxy.HTTPProxy{},
 				WebSocketProxy: &proxy.WebSocketProxy{},
 				Logger:         logger,

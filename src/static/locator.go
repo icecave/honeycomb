@@ -1,17 +1,18 @@
-package backend
+package static
 
 import (
 	"context"
 
+	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/name"
 )
 
-// StaticLocator finds a back-end HTTP server based on the server name in TLS
+// Locator finds a back-end HTTP server based on the server name in TLS
 // requests (SNI).
-type StaticLocator []matcherEndpointPair
+type Locator []matcherEndpointPair
 
 // Locate finds the back-end HTTP server for the given server name.
-func (locator StaticLocator) Locate(_ context.Context, serverName name.ServerName) *Endpoint {
+func (locator Locator) Locate(_ context.Context, serverName name.ServerName) *backend.Endpoint {
 	for _, item := range locator {
 		if item.Matcher.Match(serverName) {
 			return item.Endpoint
@@ -22,7 +23,7 @@ func (locator StaticLocator) Locate(_ context.Context, serverName name.ServerNam
 }
 
 // With returns a new StaticLocator that includes the given mapping.
-func (locator StaticLocator) With(pattern string, endpoint *Endpoint) StaticLocator {
+func (locator Locator) With(pattern string, endpoint *backend.Endpoint) Locator {
 	matcher, err := name.NewMatcher(pattern)
 	if err != nil {
 		panic(err)
@@ -36,5 +37,5 @@ func (locator StaticLocator) With(pattern string, endpoint *Endpoint) StaticLoca
 
 type matcherEndpointPair struct {
 	Matcher  *name.Matcher
-	Endpoint *Endpoint
+	Endpoint *backend.Endpoint
 }

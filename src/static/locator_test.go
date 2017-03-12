@@ -1,21 +1,22 @@
-package backend_test
+package static_test
 
 import (
 	"context"
 
 	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/name"
+	"github.com/icecave/honeycomb/src/static"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("StaticLocator", func() {
+var _ = Describe("Locator", func() {
 	var (
-		subject backend.StaticLocator
+		subject static.Locator
 	)
 
 	BeforeEach(func() {
-		subject = backend.StaticLocator{}.
+		subject = static.Locator{}.
 			With("foo", &backend.Endpoint{Address: "foo:443"}).
 			With("bar", &backend.Endpoint{Address: "bar1:443"}).
 			With("bar", &backend.Endpoint{Address: "bar2:443"})
@@ -59,7 +60,7 @@ var _ = Describe("StaticLocator", func() {
 		})
 
 		It("allows mapping to a nil endpoint", func() {
-			subject = backend.StaticLocator{}.
+			subject = static.Locator{}.
 				With("nomatch", nil).
 				With("*", &backend.Endpoint{Address: "catch-all:443"})
 
