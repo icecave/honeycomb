@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 (2017-03-13)
+
+- **[NEW]** Allow specification of static routes via environment variables
+
 ## 0.3.1 (2017-03-10)
 
 - **[FIX]** Send `X-Forwarded-Proto` and `X-Forwarded-SSL` headers
