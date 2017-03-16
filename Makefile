@@ -106,5 +106,20 @@ artifacts/build/Makefile.in:
 	curl -Lo "$(@D)/runtime.go" https://raw.githubusercontent.com/icecave/make/master/go/runtime.go
 	curl -Lo "$@" https://raw.githubusercontent.com/icecave/make/master/go/Makefile.in
 
-artifacts/cacert.pem:
-	curl -L -o "$@" http://curl.haxx.se/ca/cacert.pem
+artifacts/cabundle/gd_bundle-g2-g1.crt:
+	@mkdir -p "$(@D)"
+	curl -L -o "$@" https://certs.godaddy.com/repository/gd_bundle-g2-g1.crt
+
+artifacts/cabundle/comodo_dv_sha-256_bundle.crt.zip:
+	@mkdir -p "$(@D)"
+	curl -L -o "$@" https://namecheap.simplekb.com/SiteContents/2-7C22D5236A4543EB827F3BD8936E153E/media/COMODO_DV_SHA-256_bundle.crt.zip
+
+artifacts/cabundle/COMODO_DV_SHA-256_bundle.crt: artifacts/cabundle/comodo_dv_sha-256_bundle.crt.zip
+	unzip -o artifacts/cabundle/comodo_dv_sha-256_bundle.crt.zip -d "$(@D)"
+	touch -c "$@"
+
+artifacts/cacert.pem: artifacts/cabundle/gd_bundle-g2-g1.crt artifacts/cabundle/COMODO_DV_SHA-256_bundle.crt
+	curl -L -o "$@.orig" http://curl.haxx.se/ca/cacert.pem
+	cat "$@.orig" > "$@"
+	( echo ""; echo "Go Daddy Intermediates"; echo "=================="; cat artifacts/cabundle/gd_bundle-g2-g1.crt ) >> "$@"
+	( echo ""; echo "Comodo PositiveSSL Intermediates"; echo "=================="; cat artifacts/cabundle/COMODO_DV_SHA-256_bundle.crt ) >> "$@"
