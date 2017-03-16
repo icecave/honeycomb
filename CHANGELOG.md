@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3 (2017-03-16)
+
+- **[NEW]** Add Comodo and GoDaddy intermediate certificates to the CA bundle (thanks @Koshatul)
+
 ## 0.3.2 (2017-03-13)
 
 - **[NEW]** Allow specification of static routes via environment variables
