@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -75,6 +76,7 @@ func main() {
 	tlsConfig := &tls.Config{
 		GetCertificate: providerAdaptor.GetCertificate,
 		Certificates:   []tls.Certificate{*defaultCertificate},
+		RootCAs:        rootCAPool(config, logger),
 	}
 
 	prepareTLSConfig(tlsConfig)
@@ -166,6 +168,28 @@ func prepareTLSConfig(config *tls.Config) {
 	config.MinVersion = tls.VersionTLS10
 	config.PreferServerCipherSuites = true
 	config.CurvePreferences = []tls.CurveID{tls.CurveP256, tls.CurveP384, tls.CurveP521}
+}
+
+func rootCAPool(
+	config *cmd.Config,
+	logger *log.Logger,
+) *x509.CertPool {
+	pool := x509.NewCertPool()
+	count := len(pool.Subjects())
+
+	for _, filename := range config.Certificates.CABundles {
+		buf, err := ioutil.ReadFile(filename)
+		if err == nil {
+			pool.AppendCertsFromPEM(buf)
+			c := len(pool.Subjects())
+			logger.Printf("Loaded %d certificate(s) from CA bundle at %s", c-count, filename)
+			count = c
+		} else if !os.IsNotExist(err) {
+			logger.Fatalln(err)
+		}
+	}
+
+	return pool
 }
 
 func redirectServer(config *cmd.Config) {

@@ -8,5 +8,5 @@ EXPOSE 8080
 
 ENV GODEBUG netdns=cgo
 
-COPY artifacts/cacert.pem /etc/ssl/certs/
+COPY artifacts/cacert.pem /app/etc/ca-bundle.pem
 COPY artifacts/build/release/linux/amd64/* /app/bin/
