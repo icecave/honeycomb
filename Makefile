@@ -1,14 +1,16 @@
+SHELL := /bin/bash
+
 DOCKER_REPO ?= icecave/honeycomb
 DOCKER_TAG  ?= dev
 
 CGO_ENABLED = 0
 
-PREREQUISITES := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
+REQ := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
 CERTIFICATES := $(addprefix artifacts/certificates/honeycomb-,ca.crt ca.key server.crt server.key)
 
 CERTIFICATE_PATH ?= artifacts/certificates
 
--include artifacts/build/Makefile.in
+-include artifacts/make/go.mk
 
 .PHONY: run
 run: $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb $(CERTIFICATES)
@@ -101,10 +103,13 @@ artifacts/docker-$(DOCKER_TAG).touch: Dockerfile artifacts/cacert.pem $(addprefi
 	docker build -t "$(DOCKER_REPO):$(DOCKER_TAG)" .
 	touch "$@"
 
-artifacts/build/Makefile.in:
-	mkdir -p "$(@D)"
-	curl -Lo "$(@D)/runtime.go" https://raw.githubusercontent.com/icecave/make/master/go/runtime.go
-	curl -Lo "$@" https://raw.githubusercontent.com/icecave/make/master/go/Makefile.in
+artifacts/make/%.mk:
+	bash <(curl -s https://icecave.github.io/make/install) $*
+
+# artifacts/build/Makefile.in:
+# mkdir -p "$(@D)"
+# curl -Lo "$(@D)/runtime.go" https://raw.githubusercontent.com/icecave/make/master/go/runtime.go
+# curl -Lo "$@" https://raw.githubusercontent.com/icecave/make/master/go/Makefile.in
 
 artifacts/cabundle/gd_bundle-g2-g1.crt:
 	@mkdir -p "$(@D)"

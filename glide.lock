@@ -1,13 +1,13 @@
 hash: 8675e4f8dbf411b1e0a8ff8f5c7e8726bcf763b73925542f939156144ea92752
-updated: 2017-03-07T08:23:48.019048982+10:00
+updated: 2017-12-06T09:17:43.87637358+10:00
 imports:
 - name: github.com/docker/distribution
-  version: 50133d63723f8fa376e632a853739990a133be16
+  version: e5b5e44386f7964a1f010a2b8b7687d073215bbb
   subpackages:
   - digestset
   - reference
 - name: github.com/docker/docker
-  version: 91f11437b6d62a753d68a4291fc68ecd0c029ee1
+  version: c7dd58ffbf268680653b2905f6cd08a1eaf4d9c8
   subpackages:
   - api
   - api/types
@@ -21,35 +21,34 @@ imports:
   - api/types/registry
   - api/types/strslice
   - api/types/swarm
+  - api/types/swarm/runtime
   - api/types/time
   - api/types/versions
   - api/types/volume
   - client
-  - pkg/ioutils
-  - pkg/longpath
-  - pkg/system
-  - pkg/tlsconfig
 - name: github.com/docker/go-connections
-  version: a2afab9802043837035592f1c24827fb70766de9
+  version: 3ede32e2033de7505e6500d6c868c2b9ed9f169d
   subpackages:
   - nat
   - sockets
   - tlsconfig
 - name: github.com/docker/go-units
   version: 0dadbb0345b35ec7ef35e228dabb8de89a65bf52
-- name: github.com/docker/libtrust
-  version: aabc10ec26b754e797f9028f4589c5b7bd90dc20
 - name: github.com/dustin/go-humanize
-  version: 259d2a102b871d17f30e3cd9881a642961a1e486
+  version: bb3d318650d48840a39aa21a027c6630e198e626
+- name: github.com/gogo/protobuf
+  version: 616a82ed12d78d24d4839363e8f3c5d3f20627cf
+  subpackages:
+  - proto
 - name: github.com/golang/gddo
-  version: 13f8d77bb721c2cd340cc84e1c569629dab9abfd
+  version: 9125e5a0ecc76de82a532a98dcf25f21dcdda00a
   subpackages:
   - httputil
   - httputil/header
 - name: github.com/Microsoft/go-winio
-  version: fff283ad5116362ca252298cfc9b95828956d85d
+  version: 78439966b38d69bf38227fbf57ac8a6fee70f69a
 - name: github.com/onsi/ginkgo
-  version: bb93381d543b0e5725244abe752214a110791d01
+  version: 7a241e9c6c7fb89adf3965bd763b7369b88a51eb
   subpackages:
   - config
   - extensions/table
@@ -60,6 +59,7 @@ imports:
   - internal/leafnodes
   - internal/remote
   - internal/spec
+  - internal/spec_iterator
   - internal/specrunner
   - internal/suite
   - internal/testingtproxy
@@ -70,7 +70,7 @@ imports:
   - reporters/stenographer/support/go-isatty
   - types
 - name: github.com/onsi/gomega
-  version: c463cd2a8578290d4be7a25cba69de81cf35785e
+  version: 8a154ed9d5e84311414c1a409000a4db22c25823
   subpackages:
   - format
   - internal/assertion
@@ -84,23 +84,50 @@ imports:
   - matchers/support/goraph/util
   - types
 - name: github.com/opencontainers/go-digest
-  version: aa2ec055abd10d26d539eb630a92241b781ce4bc
+  version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
+- name: github.com/opencontainers/image-spec
+  version: 89b51c794e9113108a2914e38e66c826a649f2b5
+  subpackages:
+  - specs-go
+  - specs-go/v1
 - name: github.com/pkg/errors
-  version: bfd5150e4e41705ded2129ec33379de1cb90b513
-- name: github.com/Sirupsen/logrus
-  version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
+  version: f15c970de5b76fac0b59abb32d62c17cc7bed265
 - name: golang.org/x/net
-  version: 906cda9512f77671ab44f8c8563b13a8e707b230
+  version: b60f3a92103dfd93dfcb900ec77c6d0643510868
   subpackages:
   - context
   - context/ctxhttp
+  - html
+  - html/atom
+  - html/charset
   - idna
   - proxy
 - name: golang.org/x/sys
-  version: 075e574b89e4c2d22f2286a7e2b919519c6f3547
+  version: 2320a9c15898af1b1b24f99700d5c1e957f9d8cf
   subpackages:
   - unix
   - windows
+- name: golang.org/x/text
+  version: 1cbadb444a806fd9430d14ad08967ed91da4fa0a
+  subpackages:
+  - encoding
+  - encoding/charmap
+  - encoding/htmlindex
+  - encoding/internal
+  - encoding/internal/identifier
+  - encoding/japanese
+  - encoding/korean
+  - encoding/simplifiedchinese
+  - encoding/traditionalchinese
+  - encoding/unicode
+  - internal/tag
+  - internal/utf8internal
+  - language
+  - runes
+  - secure/bidirule
+  - transform
+  - unicode/bidi
+  - unicode/norm
 testImports:
 - name: gopkg.in/yaml.v2
-  version: a3f3340b5840cee44f372bddb5880fcbc419b46a
+  version: eb3733d160e74a9c7e442f435eb3bea458e1d19f
