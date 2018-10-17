@@ -120,6 +120,14 @@ func loadDefaultCertificate(config *cmd.Config) (*tls.Certificate, error) {
 	if err != nil {
 		return nil, err
 	}
+	issuer, err := tls.LoadX509KeyPair(
+		path.Join(config.Certificates.BasePath, config.Certificates.IssuerCertificate),
+		path.Join(config.Certificates.BasePath, config.Certificates.IssuerKey),
+	)
+	if err != nil {
+		return nil, err
+	}
+	cert.Certificate = append(cert.Certificate, issuer.Certificate...)
 	return &cert, err
 }
 
