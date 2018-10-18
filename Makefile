@@ -1,8 +1,5 @@
 SHELL := /bin/bash
 
-MATRIX_OS   ?= darwin linux
-MATRIX_ARCH ?= amd64
-
 DOCKER_REPO ?= icecave/honeycomb
 DOCKER_TAG  ?= dev
 
@@ -21,7 +18,7 @@ run: $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb $(CERTIFICATES)
 		$(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb
 
 .PHONY: docker
-docker: artifacts/docker-$(DOCKER_TAG).touch artifacts/build/release/linux/amd64/healthcheck artifacts/build/release/linux/amd64/honeycomb
+docker: artifacts/docker-$(DOCKER_TAG).touch
 
 .PHONY: publish
 publish: docker
