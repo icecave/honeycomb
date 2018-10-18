@@ -68,7 +68,7 @@ func (generator *IssuerSignedGenerator) Generate(
 	}
 
 	return &tls.Certificate{
-		Certificate: [][]byte{raw},
+		Certificate: [][]byte{certificate.Raw, generator.IssuerCertificate.Raw},
 		PrivateKey:  generator.ServerKey,
 		Leaf:        certificate,
 	}, nil
