@@ -111,7 +111,10 @@ func main() {
 	if err != nil {
 		logger.Fatal(err)
 	}
-	listener = haproxy.NewListener(listener)
+
+	if config.ProxySupport {
+		listener = haproxy.NewListener(listener)
+	}
 
 	logger.Printf("Listening on port %s", config.Port)
 

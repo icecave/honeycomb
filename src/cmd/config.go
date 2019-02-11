@@ -13,6 +13,7 @@ type Config struct {
 	InsecurePort       string
 	DockerPollInterval time.Duration
 	Certificates       certificateConfig
+	ProxySupport       bool
 }
 
 type certificateConfig struct {
@@ -26,6 +27,7 @@ type certificateConfig struct {
 
 // GetConfigFromEnvironment creates Config object based on the shell environment.
 func GetConfigFromEnvironment() *Config {
+
 	return &Config{
 		Port:               env("PORT", "8443"),
 		InsecurePort:       env("REDIRECT_PORT", "8080"),
@@ -41,6 +43,7 @@ func GetConfigFromEnvironment() *Config {
 				",",
 			),
 		},
+		ProxySupport: envBool("PROXY_PROTOCOL", false),
 	}
 }
 
@@ -55,6 +58,15 @@ func env(key string, def string) string {
 func envInt(key string, def int64) int64 {
 	if value, ok := os.LookupEnv(key); ok {
 		i, _ := strconv.ParseInt(value, 10, 64)
+		return i
+	}
+
+	return def
+}
+
+func envBool(key string, def bool) bool {
+	if value, ok := os.LookupEnv(key); ok {
+		i, _ := strconv.ParseBool(value)
 		return i
 	}
 

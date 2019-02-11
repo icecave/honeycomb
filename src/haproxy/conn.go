@@ -34,8 +34,14 @@ func NewConn(nc net.Conn) (net.Conn, error) {
 // the connection unmolested.
 func (c *Conn) ProxyInit() error {
 	pc, err := proxyproto.Read(c.rd)
-	if err != nil && err != proxyproto.ErrNoProxyProtocol {
+	if err != nil &&
+		err != proxyproto.ErrNoProxyProtocol &&
+		err != proxyproto.ErrInvalidLength {
 		return err
+	} else if err == proxyproto.ErrInvalidLength {
+		// Failed to parse header, the connection is probably about to drop anyway,
+		// it's not a PROXY header at least.
+		return nil
 	}
 
 	c.hdr = pc

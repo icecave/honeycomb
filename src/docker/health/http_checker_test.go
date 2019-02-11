@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 
+	"github.com/icecave/honeycomb/src/haproxy"
+
 	"github.com/icecave/honeycomb/src/docker/health"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -30,6 +32,7 @@ var _ = Describe("HTTPChecker", func() {
 
 	BeforeEach(func() {
 		server = httptest.NewUnstartedServer(http.HandlerFunc(handler))
+		server.Listener = haproxy.NewListener(server.Listener)
 		server.StartTLS()
 
 		serverURL, _ = url.Parse(server.URL)
