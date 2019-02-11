@@ -6,9 +6,12 @@ import (
 	"crypto/x509"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/icecave/honeycomb/src/haproxy"
 
 	"github.com/docker/docker/client"
 	"github.com/icecave/honeycomb/src/backend"
@@ -104,9 +107,15 @@ func main() {
 
 	go redirectServer(config)
 
+	listener, err := net.Listen("tcp", ":"+config.Port)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	listener = haproxy.NewListener(listener)
+
 	logger.Printf("Listening on port %s", config.Port)
 
-	err = server.ListenAndServeTLS("", "")
+	err = server.ServeTLS(listener, "", "")
 	if err != nil {
 		logger.Fatalln(err)
 	}

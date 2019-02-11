@@ -18,3 +18,4 @@ import:
   subpackages:
   - httputil
 - package: github.com/dustin/go-humanize
+- package: github.com/pires/go-proxyproto
