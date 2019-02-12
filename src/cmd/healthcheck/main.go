@@ -12,7 +12,8 @@ func main() {
 	config := cmd.GetConfigFromEnvironment()
 
 	checker := health.HTTPChecker{
-		Address: ":" + config.Port,
+		Address:      ":" + config.Port,
+		ProxySupport: config.ProxySupport,
 	}
 
 	status := checker.Check()
