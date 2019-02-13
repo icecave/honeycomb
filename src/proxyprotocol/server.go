@@ -1,10 +1,11 @@
-package haproxy
+package proxyprotocol
 
 import (
 	"net"
 )
 
-// Listener is a struct for providing a `net.Listener` compatible struct that checks for PROXY headers on new connections.
+// Listener is a struct for providing a `net.Listener` compatible struct that
+// checks for PROXY headers on new connections.
 type Listener struct {
 	l net.Listener
 }

@@ -11,8 +11,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/icecave/honeycomb/src/haproxy"
-
 	"github.com/docker/docker/client"
 	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/cmd"
@@ -22,6 +20,7 @@ import (
 	"github.com/icecave/honeycomb/src/frontend/cert"
 	"github.com/icecave/honeycomb/src/frontend/cert/generator"
 	"github.com/icecave/honeycomb/src/proxy"
+	"github.com/icecave/honeycomb/src/proxyprotocol"
 	"github.com/icecave/honeycomb/src/static"
 )
 
@@ -112,8 +111,8 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	if config.ProxySupport {
-		listener = haproxy.NewListener(listener)
+	if config.ProxyProtocol {
+		listener = proxyprotocol.NewListener(listener)
 	}
 
 	logger.Printf("Listening on port %s", config.Port)

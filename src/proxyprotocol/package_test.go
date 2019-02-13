@@ -1,4 +1,4 @@
-package haproxy_test
+package proxyprotocol_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestSuite(t *testing.T) {
 	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "HAProxy")
+	ginkgo.RunSpecs(t, "PROXY Protocol")
 }

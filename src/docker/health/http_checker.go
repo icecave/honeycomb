@@ -1,21 +1,18 @@
 package health
 
 import (
-	"context"
 	"crypto/tls"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
-
-	proxyproto "github.com/pires/go-proxyproto"
 )
 
 // HTTPChecker is a checker that connects to the HTTP server to check its status.
 type HTTPChecker struct {
-	Address      string
-	Client       *http.Client
-	ProxySupport bool
+	Address       string
+	Client        *http.Client
+	ProxyProtocol bool
 }
 
 // Check returns information about the health of the HTTPS server.
@@ -29,28 +26,8 @@ func (checker *HTTPChecker) Check() Status {
 
 	client := checker.Client
 	if client == nil {
-		dialContext := func(ctx context.Context, network, addr string) (net.Conn, error) {
-			conn, err := net.Dial(network, addr)
-			if err != nil {
-				return nil, err
-			}
-
-			header := proxyproto.Header{
-				Command: proxyproto.LOCAL,
-				Version: 2,
-			}
-			_, err = header.WriteTo(conn)
-			if err != nil {
-				return nil, err
-			}
-			return conn, nil
-		}
-		if !checker.ProxySupport {
-			dialContext = nil
-		}
 		client = &http.Client{
 			Transport: &http.Transport{
-				DialContext: dialContext,
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,
 				},

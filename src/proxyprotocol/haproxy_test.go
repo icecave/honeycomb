@@ -1,17 +1,17 @@
-package haproxy_test
+package proxyprotocol_test
 
 import (
 	"fmt"
 	"net"
 
+	"github.com/icecave/honeycomb/src/proxyprotocol"
 	proxyproto "github.com/pires/go-proxyproto"
 
-	"github.com/icecave/honeycomb/src/haproxy"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("HAProxy", func() {
+var _ = Describe("PROXY Protocol", func() {
 	Describe("Connection", func() {
 		It("accepts PROXY v2 connections", func() {
 			server, client := net.Pipe()
@@ -33,7 +33,7 @@ var _ = Describe("HAProxy", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}()
 
-			pServer, err := haproxy.NewConn(server)
+			pServer, err := proxyprotocol.NewConn(server)
 			Expect(err).ShouldNot(HaveOccurred())
 			defer pServer.Close()
 			Expect(pServer.RemoteAddr().String()).To(Equal("127.127.127.127:31337"))
@@ -60,7 +60,7 @@ var _ = Describe("HAProxy", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}()
 
-			pServer, err := haproxy.NewConn(server)
+			pServer, err := proxyprotocol.NewConn(server)
 			Expect(err).ShouldNot(HaveOccurred())
 			defer pServer.Close()
 			Expect(pServer.RemoteAddr().String()).To(Equal("127.127.127.127:31337"))
@@ -76,7 +76,7 @@ var _ = Describe("HAProxy", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}()
 
-			pServer, err := haproxy.NewConn(server)
+			pServer, err := proxyprotocol.NewConn(server)
 			Expect(err).ShouldNot(HaveOccurred())
 			defer pServer.Close()
 			Expect(pServer.RemoteAddr().String()).To(Equal("pipe"))

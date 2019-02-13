@@ -1,4 +1,4 @@
-package haproxy
+package proxyprotocol
 
 import (
 	"bufio"
@@ -34,30 +34,40 @@ func NewConn(nc net.Conn) (net.Conn, error) {
 // the connection unmolested.
 func (c *Conn) ProxyInit() error {
 	pc, err := proxyproto.Read(c.rd)
-	if err != nil &&
-		err != proxyproto.ErrNoProxyProtocol &&
-		err != proxyproto.ErrInvalidLength {
-		return err
-	} else if err == proxyproto.ErrInvalidLength {
-		// Failed to parse header, the connection is probably about to drop anyway,
-		// it's not a PROXY header at least.
+	switch err {
+	case
+		proxyproto.ErrNoProxyProtocol,
+		proxyproto.ErrInvalidLength:
+		// `ErrNoProxyProtocol` or `ErrInvalidLength` mean it's not a PROXY protocol connection, just keep going with the connection
 		return nil
+	case nil:
+		// No error, so put the PROXY protocol header into the `hdr` property of the connection
+		c.hdr = pc
+		c.l = &net.TCPAddr{
+			IP:   pc.DestinationAddress,
+			Port: int(pc.DestinationPort),
+		}
+		c.r = &net.TCPAddr{
+			IP:   pc.SourceAddress,
+			Port: int(pc.SourcePort),
+		}
+		return nil
+	default:
+		// Any other error, return it
+		return err
 	}
-
-	c.hdr = pc
-	return nil
 }
 
 // Read reads data from the connection.
-// Read can be made to time out and return an Error with Timeout() == true
-// after a fixed time limit; see SetDeadline and SetReadDeadline.
+// Read can be made to time out and return an `net.Error` with Timeout() == true
+// after a fixed time limit; see `net.Error`, ConnSetDeadline and SetReadDeadline.
 func (c *Conn) Read(b []byte) (n int, err error) {
 	return c.rd.Read(b)
 }
 
 // Write writes data to the connection.
-// Write can be made to time out and return an Error with Timeout() == true
-// after a fixed time limit; see SetDeadline and SetWriteDeadline.
+// Write can be made to time out and return an `net.Error` with Timeout() == true
+// after a fixed time limit; see `net.Error`, SetDeadline and SetWriteDeadline.
 func (c *Conn) Write(b []byte) (n int, err error) {
 	return c.c.Write(b)
 }
@@ -70,22 +80,16 @@ func (c *Conn) Close() error {
 
 // LocalAddr returns the local network address.
 func (c *Conn) LocalAddr() net.Addr {
-	if c.hdr == nil {
+	if c.hdr == nil || c.l == nil {
 		return c.c.LocalAddr()
-	}
-	if c.l == nil {
-		c.l = NewProxyAddr(c.hdr.TransportProtocol, c.hdr.DestinationAddress, c.hdr.DestinationPort)
 	}
 	return c.l
 }
 
 // RemoteAddr returns the remote network address.
 func (c *Conn) RemoteAddr() net.Addr {
-	if c.hdr == nil {
+	if c.hdr == nil || c.r == nil {
 		return c.c.RemoteAddr()
-	}
-	if c.r == nil {
-		c.r = NewProxyAddr(c.hdr.TransportProtocol, c.hdr.SourceAddress, c.hdr.SourcePort)
 	}
 	return c.r
 }
