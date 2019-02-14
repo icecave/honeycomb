@@ -17,9 +17,8 @@ func main() {
 	config := cmd.GetConfigFromEnvironment()
 
 	checker := health.HTTPChecker{
-		Address:       ":" + config.Port,
-		ProxyProtocol: config.ProxyProtocol,
-		Client:        checkerHttpClientProvider(config),
+		Address: ":" + config.Port,
+		Client:  checkerHTTPClientProvider(config),
 	}
 
 	status := checker.Check()
@@ -29,7 +28,7 @@ func main() {
 	}
 }
 
-func checkerHttpClientProvider(config *cmd.Config) *http.Client {
+func checkerHTTPClientProvider(config *cmd.Config) *http.Client {
 	if config.ProxyProtocol {
 		return &http.Client{
 			Transport: &http.Transport{

@@ -10,9 +10,8 @@ import (
 
 // HTTPChecker is a checker that connects to the HTTP server to check its status.
 type HTTPChecker struct {
-	Address       string
-	Client        *http.Client
-	ProxyProtocol bool
+	Address string
+	Client  *http.Client
 }
 
 // Check returns information about the health of the HTTPS server.

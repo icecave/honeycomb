@@ -2,33 +2,10 @@ package proxyprotocol
 
 import (
 	"net"
-	"strconv"
 	"strings"
 
 	proxyproto "github.com/pires/go-proxyproto"
 )
-
-// NewAddr creates an Addr with supplied network, host and port as strings.
-func NewAddr(network, host, port string) net.Addr {
-	portInt, _ := strconv.ParseInt(port, 10, 16)
-	switch strings.ToLower(network) {
-	case "unix", "unixstream", "unixdgram":
-		return &net.UnixAddr{
-			Net:  network,
-			Name: host,
-		}
-	case "udp", "udp4", "udp6":
-		return &net.UDPAddr{
-			IP:   net.ParseIP(host),
-			Port: int(portInt),
-		}
-	default:
-		return &net.TCPAddr{
-			IP:   net.ParseIP(host),
-			Port: int(portInt),
-		}
-	}
-}
 
 // NewProxyAddr creates an Addr struct from supplied
 // proxyproto.AddressFamilyAndProtocol, net.IP and port as uint16.
