@@ -44,7 +44,7 @@ func (c *Conn) proxyInit() error {
 		// the connection
 		c.hdr = pc
 		c.l = NewProxyAddr(c.hdr.TransportProtocol, c.hdr.DestinationAddress, c.hdr.DestinationPort)
-		c.l = NewProxyAddr(c.hdr.TransportProtocol, c.hdr.SourceAddress, c.hdr.SourcePort)
+		c.r = NewProxyAddr(c.hdr.TransportProtocol, c.hdr.SourceAddress, c.hdr.SourcePort)
 		return nil
 	default:
 		// Any other error, return it
