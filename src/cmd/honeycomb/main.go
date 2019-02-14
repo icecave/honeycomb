@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path"
@@ -19,6 +20,7 @@ import (
 	"github.com/icecave/honeycomb/src/frontend/cert"
 	"github.com/icecave/honeycomb/src/frontend/cert/generator"
 	"github.com/icecave/honeycomb/src/proxy"
+	"github.com/icecave/honeycomb/src/proxyprotocol"
 	"github.com/icecave/honeycomb/src/static"
 )
 
@@ -104,9 +106,18 @@ func main() {
 
 	go redirectServer(config)
 
+	listener, err := net.Listen("tcp", ":"+config.Port)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	if config.ProxyProtocol {
+		listener = proxyprotocol.NewListener(listener)
+	}
+
 	logger.Printf("Listening on port %s", config.Port)
 
-	err = server.ListenAndServeTLS("", "")
+	err = server.ServeTLS(listener, "", "")
 	if err != nil {
 		logger.Fatalln(err)
 	}
