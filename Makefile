@@ -1,8 +1,5 @@
 SHELL := /bin/bash
 
-BUILD_PATH ?= artifacts/build
-BINARIES ?= honeycomb healthcheck
-
 DOCKER_REPO ?= icecave/honeycomb
 DOCKER_TAG  ?= dev
 
@@ -16,9 +13,9 @@ CERTIFICATE_PATH ?= artifacts/certificates
 -include artifacts/make/go.mk
 
 .PHONY: run
-run: $(BUILD_PATH)/debug/$(GOOS)/$(GOARCH)/honeycomb $(CERTIFICATES)
+run: $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb $(CERTIFICATES)
 	CERTIFICATE_PATH=$(CERTIFICATE_PATH) \
-		$(BUILD_PATH)/debug/$(GOOS)/$(GOARCH)/honeycomb
+		$(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb
 
 .PHONY: docker
 docker: artifacts/docker-$(DOCKER_TAG).touch

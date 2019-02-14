@@ -16,11 +16,11 @@ const DefaultTimeout = 5 * time.Second
 // interface suitable for use as the tls.Config "GetEnvironment" callback.
 type ProviderAdaptor struct {
 	// PrimaryProvider is the certificate provider used to create certificates
-	// for "normal" recognized server names.
+	// for "normal" recognised server names.
 	PrimaryProvider Provider
 
 	// SecondaryProvider is used to provide default or "fallback" certificates
-	// so that requests may be served even when the server name is unrecognized.
+	// so that requests may be served even when the server name is unrecognised.
 	SecondaryProvider Provider
 
 	// Timeout is the maximum time allowed for a certificate request to complete.
@@ -29,7 +29,7 @@ type ProviderAdaptor struct {
 
 	// IsRecognised is a predicate function that is used to work out which
 	// certificate provider to use for a given server name. If IsRecognised is
-	// nil, all server names are considered unrecognized.
+	// nil, all server names are considered unrecognised.
 	IsRecognised func(context.Context, name.ServerName) bool
 }
 
@@ -50,13 +50,13 @@ func (adaptor *ProviderAdaptor) GetCertificate(
 
 	// Next, look for an existing certificate from the primary provider. If such
 	// a certificate is available, it doesn't matter if the server name is
-	// recognized or not ...
+	// recognised or not ...
 	certificate, err := adaptor.PrimaryProvider.GetExistingCertificate(ctx, serverName)
 	if certificate != nil || err != nil {
 		return certificate, err
 	}
 
-	// If the server name is recognized, use the primary provider to get a new
+	// If the server name is recognised, use the primary provider to get a new
 	// certificate for the server name ...
 	if adaptor.IsRecognised != nil && adaptor.IsRecognised(ctx, serverName) {
 		return adaptor.PrimaryProvider.GetCertificate(ctx, serverName)
