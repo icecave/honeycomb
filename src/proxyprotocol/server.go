@@ -4,13 +4,13 @@ import (
 	"net"
 )
 
-// Listener is a struct for providing a `net.Listener` compatible struct that
+// Listener is a struct for providing a net.Listener compatible struct that
 // checks for PROXY headers on new connections.
 type Listener struct {
 	l net.Listener
 }
 
-// NewListener returns a `Listener` wrapping a supplied `net.Listener`
+// NewListener returns a Listener wrapping a supplied net.Listener
 func NewListener(l net.Listener) net.Listener {
 	return &Listener{
 		l: l,

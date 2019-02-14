@@ -8,7 +8,7 @@ import (
 	proxyproto "github.com/pires/go-proxyproto"
 )
 
-// NewAddr creates an `Addr` with supplied network, host and port as strings.
+// NewAddr creates an Addr with supplied network, host and port as strings.
 func NewAddr(network, host, port string) net.Addr {
 	portInt, _ := strconv.ParseInt(port, 10, 16)
 	switch strings.ToLower(network) {
@@ -30,7 +30,8 @@ func NewAddr(network, host, port string) net.Addr {
 	}
 }
 
-// NewProxyAddr creates an `Addr` struct from supplied `proxyproto.AddressFamilyAndProtocol`, `net.IP` and port as `unit16`.
+// NewProxyAddr creates an Addr struct from supplied
+// proxyproto.AddressFamilyAndProtocol, net.IP and port as uint16.
 func NewProxyAddr(proto proxyproto.AddressFamilyAndProtocol, addr net.IP, port uint16) net.Addr {
 	network := convertProxyProtocolToString(proto)
 	switch strings.ToLower(network) {

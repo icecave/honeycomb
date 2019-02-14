@@ -8,7 +8,7 @@ import (
 	proxyproto "github.com/pires/go-proxyproto"
 )
 
-// Conn is a `net.Conn` compatible struct that handles PROXY header checking.
+// Conn is a net.Conn compatible struct that handles PROXY header checking.
 type Conn struct {
 	rd  *bufio.Reader
 	c   net.Conn
@@ -17,31 +17,31 @@ type Conn struct {
 	hdr *proxyproto.Header
 }
 
-// NewConn wraps a connection with a `bufio.Reader` for checking if the
-// PROXY protocol headers are present
+// NewConn returns a connection that parses PROXY protocol headers from the
+// start of the stream and supplies a net.Conn compatible interface.
 func NewConn(nc net.Conn) (net.Conn, error) {
 	c := &Conn{
 		c:  nc,
 		rd: bufio.NewReader(nc),
 	}
-	if err := c.ProxyInit(); err != nil {
+	if err := c.proxyInit(); err != nil {
 		return nil, err
 	}
 	return c, nil
 }
 
-// ProxyInit checks for the PROXY protocol headers, and if not returns
-// the connection unmolested.
-func (c *Conn) ProxyInit() error {
+func (c *Conn) proxyInit() error {
 	pc, err := proxyproto.Read(c.rd)
 	switch err {
 	case
 		proxyproto.ErrNoProxyProtocol,
 		proxyproto.ErrInvalidLength:
-		// `ErrNoProxyProtocol` or `ErrInvalidLength` mean it's not a PROXY protocol connection, just keep going with the connection
+		// ErrNoProxyProtocol or ErrInvalidLength mean it's not a PROXY protocol
+		// connection, just keep going with the connection
 		return nil
 	case nil:
-		// No error, so put the PROXY protocol header into the `hdr` property of the connection
+		// No error, so put the PROXY protocol header into the hdr property of
+		// the connection
 		c.hdr = pc
 		c.l = &net.TCPAddr{
 			IP:   pc.DestinationAddress,
@@ -59,15 +59,15 @@ func (c *Conn) ProxyInit() error {
 }
 
 // Read reads data from the connection.
-// Read can be made to time out and return an `net.Error` with Timeout() == true
-// after a fixed time limit; see `net.Error`, ConnSetDeadline and SetReadDeadline.
+// Read can be made to time out and return an net.Error with Timeout() == true
+// after a fixed time limit; see net.Error, ConnSetDeadline and SetReadDeadline.
 func (c *Conn) Read(b []byte) (n int, err error) {
 	return c.rd.Read(b)
 }
 
 // Write writes data to the connection.
-// Write can be made to time out and return an `net.Error` with Timeout() == true
-// after a fixed time limit; see `net.Error`, SetDeadline and SetWriteDeadline.
+// Write can be made to time out and return an net.Error with Timeout() == true
+// after a fixed time limit; see net.Error, SetDeadline and SetWriteDeadline.
 func (c *Conn) Write(b []byte) (n int, err error) {
 	return c.c.Write(b)
 }
