@@ -1,8 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **[FIX]** Generated certificates now include the issuer CA certificate in the chain (thanks [@koshatul])
+- **[NEW]** Add support for parsing the client's remote address from [PROXY protocol](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt) headers (thanks [@koshatul])
+- **[NEW]** Add `CA_PATH` environment variable for specifying the location of CA bundles
+
 ## 0.3.3 (2017-03-16)
 
-- **[NEW]** Add Comodo and GoDaddy intermediate certificates to the CA bundle (thanks @Koshatul)
+- **[NEW]** Add Comodo and GoDaddy intermediate certificates to the CA bundle (thanks [@koshatul])
 
 ## 0.3.2 (2017-03-13)
 
@@ -26,3 +32,5 @@
 ## 0.1.0 (2017-03-03)
 
 - Initial release
+
+[@koshatul]: https://github.com/koshatul
