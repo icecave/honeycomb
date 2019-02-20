@@ -1,4 +1,5 @@
 DOCKER_REPO ?= icecave/honeycomb
+DOCKER_TAG  ?= dev
 
 MATRIX_OS ?= darwin linux
 MATRIX_ARCH ?= amd64
@@ -6,8 +7,8 @@ MATRIX_ARCH ?= amd64
 CERTIFICATES := $(addprefix artifacts/certificates/honeycomb-,ca.crt ca.key server.crt server.key) artifacts/cacert.pem
 CERTIFICATE_PATH ?= artifacts/certificates
 
-REQ := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
-DOCKER_REQ := $(CERTIFICATES)
+REQ += $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
+DOCKER_REQ += $(CERTIFICATES)
 
 -include artifacts/make/go/Makefile
 -include artifacts/make/docker/Makefile
