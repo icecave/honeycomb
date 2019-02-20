@@ -1,28 +1,23 @@
-SHELL := /bin/bash
-
 DOCKER_REPO ?= icecave/honeycomb
-DOCKER_TAG  ?= dev
 
-CGO_ENABLED = 0
+MATRIX_OS ?= darwin linux
+MATRIX_ARCH ?= amd64
 
-REQ := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
-CERTIFICATES := $(addprefix artifacts/certificates/honeycomb-,ca.crt ca.key server.crt server.key)
-
+CERTIFICATES := $(addprefix artifacts/certificates/honeycomb-,ca.crt ca.key server.crt server.key) artifacts/cacert.pem
 CERTIFICATE_PATH ?= artifacts/certificates
 
--include artifacts/make/go.mk
+REQ := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
+DOCKER_REQ := $(CERTIFICATES)
+
+-include artifacts/make/go/Makefile
+-include artifacts/make/docker/Makefile
+
+artifacts/make/%/Makefile:
+	curl -sf https://jmalloc.github.io/makefiles/fetch | bash /dev/stdin $*
 
 .PHONY: run
-run: $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb $(CERTIFICATES)
-	CERTIFICATE_PATH=$(CERTIFICATE_PATH) \
-		$(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb
-
-.PHONY: docker
-docker: artifacts/docker-$(DOCKER_TAG).touch
-
-.PHONY: publish
-publish: docker
-	docker push "$(DOCKER_REPO):$(DOCKER_TAG)"
+run: artifacts/build/debug/$(GOOS)/$(GOARCH)/honeycomb $(CERTIFICATES)
+	CERTIFICATE_PATH=$(CERTIFICATE_PATH) $(<) $(RUN_ARGS)
 
 .PHONY: docker-services
 docker-services: docker
@@ -72,12 +67,13 @@ artifacts/certificates/%.csr.tmp: artifacts/certificates/%.key
 		-key "$<" \
 		-out "$@"
 
-artifacts/certificates/honeycomb-ca.crt: artifacts/certificates/honeycomb-ca.key
+artifacts/certificates/honeycomb-ca.crt: artifacts/certificates/honeycomb-ca.key artifacts/certificates/openssl.cnf
 	openssl req \
 		-new \
 		-x509 \
 		-sha256 \
 		-days 30 \
+		-config artifacts/certificates/openssl.cnf \
 		-extensions v3_ca \
 		-nodes \
 		-subj "/CN=Honeycomb CA" \
@@ -97,19 +93,12 @@ artifacts/certificates/%.crt: artifacts/certificates/%.csr.tmp artifacts/certifi
 		-out "$@"
 
 artifacts/certificates/extensions.cnf.tmp:
-	echo "extendedKeyUsage = serverAuth" > "$@"
+	@mkdir -p "$(@D)"
+	echo "extendedKeyUsage = serverAuth" | tee "$(@)"
 
-artifacts/docker-$(DOCKER_TAG).touch: Dockerfile artifacts/cacert.pem $(addprefix $(BUILD_PATH)/release/linux/amd64/,$(BINARIES))
-	docker build -t "$(DOCKER_REPO):$(DOCKER_TAG)" .
-	touch "$@"
-
-artifacts/make/%.mk:
-	bash <(curl -s https://icecave.github.io/make/install) $*
-
-# artifacts/build/Makefile.in:
-# mkdir -p "$(@D)"
-# curl -Lo "$(@D)/runtime.go" https://raw.githubusercontent.com/icecave/make/master/go/runtime.go
-# curl -Lo "$@" https://raw.githubusercontent.com/icecave/make/master/go/Makefile.in
+artifacts/certificates/openssl.cnf:
+	@mkdir -p "$(@D)"
+	curl -sSL "https://raw.githubusercontent.com/openssl/openssl/master/apps/openssl.cnf" | tee "$(@)"
 
 artifacts/cabundle/gd_bundle-g2-g1.crt:
 	@mkdir -p "$(@D)"
