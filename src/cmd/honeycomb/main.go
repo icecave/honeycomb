@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"time"
 
 	"github.com/docker/docker/client"
 	"github.com/icecave/honeycomb/src/backend"
@@ -83,9 +84,20 @@ func main() {
 		RootCAs:        rootCACertPool,
 	}
 
-	httpProxyTransport := http.DefaultTransport
-	httpProxyTransport.(*http.Transport).TLSClientConfig = &tls.Config{
-		RootCAs: rootCACertPool,
+	httpProxyTransport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			RootCAs: rootCACertPool,
+		},
 	}
 
 	prepareTLSConfig(tlsConfig)
