@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"time"
 
 	"github.com/docker/docker/client"
 	"github.com/icecave/honeycomb/src/backend"
@@ -85,16 +84,12 @@ func main() {
 	}
 
 	httpProxyTransport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-			DualStack: true,
-		}).DialContext,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
+		Proxy:                 http.DefaultTransport.(*http.Transport).Proxy,
+		DialContext:           http.DefaultTransport.(*http.Transport).DialContext,
+		MaxIdleConns:          http.DefaultTransport.(*http.Transport).MaxIdleConns,
+		IdleConnTimeout:       http.DefaultTransport.(*http.Transport).IdleConnTimeout,
+		TLSHandshakeTimeout:   http.DefaultTransport.(*http.Transport).TLSHandshakeTimeout,
+		ExpectContinueTimeout: http.DefaultTransport.(*http.Transport).ExpectContinueTimeout,
 		TLSClientConfig: &tls.Config{
 			RootCAs: rootCACertPool,
 		},
