@@ -75,10 +75,17 @@ func main() {
 		SecondaryProvider: secondaryCertProvider,
 	}
 
+	rootCACertPool := rootCAPool(config, logger)
+
 	tlsConfig := &tls.Config{
 		GetCertificate: providerAdaptor.GetCertificate,
 		Certificates:   []tls.Certificate{*defaultCertificate},
-		RootCAs:        rootCAPool(config, logger),
+		RootCAs:        rootCACertPool,
+	}
+
+	httpProxyTransport := http.DefaultTransport
+	httpProxyTransport.(*http.Transport).TLSClientConfig = &tls.Config{
+		RootCAs: rootCACertPool,
 	}
 
 	prepareTLSConfig(tlsConfig)
@@ -88,8 +95,10 @@ func main() {
 		TLSConfig: tlsConfig,
 		Handler: &frontend.Handler{
 			Proxy: &proxy.Handler{
-				Locator:        locator,
-				HTTPProxy:      &proxy.HTTPProxy{},
+				Locator: locator,
+				HTTPProxy: &proxy.HTTPProxy{
+					Transport: httpProxyTransport,
+				},
 				WebSocketProxy: &proxy.WebSocketProxy{},
 				Logger:         logger,
 			},
