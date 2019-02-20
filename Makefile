@@ -1,28 +1,11 @@
-SHELL := /bin/bash
-
 DOCKER_REPO ?= icecave/honeycomb
 DOCKER_TAG  ?= dev
 
-CGO_ENABLED = 0
+REQ += $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
+DOCKER_REQ += artifacts/cacert.pem
 
-REQ := $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
-CERTIFICATES := $(addprefix artifacts/certificates/honeycomb-,ca.crt ca.key server.crt server.key)
-
-CERTIFICATE_PATH ?= artifacts/certificates
-
--include artifacts/make/go.mk
-
-.PHONY: run
-run: $(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb $(CERTIFICATES)
-	CERTIFICATE_PATH=$(CERTIFICATE_PATH) \
-		$(BUILD_PATH)/debug/$(CURRENT_OS)/$(CURRENT_ARCH)/honeycomb
-
-.PHONY: docker
-docker: artifacts/docker-$(DOCKER_TAG).touch
-
-.PHONY: publish
-publish: docker
-	docker push "$(DOCKER_REPO):$(DOCKER_TAG)"
+-include artifacts/make/go/Makefile
+-include artifacts/make/docker/Makefile
 
 .PHONY: docker-services
 docker-services: docker
@@ -99,18 +82,6 @@ artifacts/certificates/%.crt: artifacts/certificates/%.csr.tmp artifacts/certifi
 artifacts/certificates/extensions.cnf.tmp:
 	echo "extendedKeyUsage = serverAuth" > "$@"
 
-artifacts/docker-$(DOCKER_TAG).touch: Dockerfile artifacts/cacert.pem $(addprefix $(BUILD_PATH)/release/linux/amd64/,$(BINARIES))
-	docker build -t "$(DOCKER_REPO):$(DOCKER_TAG)" .
-	touch "$@"
-
-artifacts/make/%.mk:
-	bash <(curl -s https://icecave.github.io/make/install) $*
-
-# artifacts/build/Makefile.in:
-# mkdir -p "$(@D)"
-# curl -Lo "$(@D)/runtime.go" https://raw.githubusercontent.com/icecave/make/master/go/runtime.go
-# curl -Lo "$@" https://raw.githubusercontent.com/icecave/make/master/go/Makefile.in
-
 artifacts/cabundle/gd_bundle-g2-g1.crt:
 	@mkdir -p "$(@D)"
 	curl -L -o "$@" https://certs.godaddy.com/repository/gd_bundle-g2-g1.crt
@@ -128,3 +99,6 @@ artifacts/cacert.pem: artifacts/cabundle/gd_bundle-g2-g1.crt artifacts/cabundle/
 	cat "$@.orig" > "$@"
 	( echo ""; echo "Go Daddy Intermediates"; echo "=================="; cat artifacts/cabundle/gd_bundle-g2-g1.crt ) >> "$@"
 	( echo ""; echo "Comodo PositiveSSL Intermediates"; echo "=================="; cat artifacts/cabundle/COMODO_DV_SHA-256_bundle.crt ) >> "$@"
+
+artifacts/make/%/Makefile:
+	curl -sf https://jmalloc.github.io/makefiles/fetch | bash /dev/stdin $*
