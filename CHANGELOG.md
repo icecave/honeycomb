@@ -5,7 +5,6 @@
 - **[FIX]** Generated certificates now include the issuer CA certificate in the chain (thanks [@koshatul])
 - **[NEW]** Add support for parsing the client's remote address from [PROXY protocol](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt) headers (thanks [@koshatul])
 - **[NEW]** Add `CA_PATH` environment variable for specifying the location of CA bundles
-- **[FIX]** `CA_PATH` did not affect connections to upstream services ([@koshatul])
 
 ## 0.3.3 (2017-03-16)
 
