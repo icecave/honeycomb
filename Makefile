@@ -13,9 +13,6 @@ DOCKER_REQ += $(CERTIFICATES)
 -include artifacts/make/go/Makefile
 -include artifacts/make/docker/Makefile
 
-artifacts/make/%/Makefile:
-	curl -sf https://jmalloc.github.io/makefiles/fetch | bash /dev/stdin $*
-
 .PHONY: run
 run: artifacts/build/debug/$(GOOS)/$(GOARCH)/honeycomb $(CERTIFICATES)
 	CERTIFICATE_PATH=$(CERTIFICATE_PATH) $(<) $(RUN_ARGS)
@@ -118,3 +115,6 @@ artifacts/cacert.pem: artifacts/cabundle/gd_bundle-g2-g1.crt artifacts/cabundle/
 	cat "$@.orig" > "$@"
 	( echo ""; echo "Go Daddy Intermediates"; echo "=================="; cat artifacts/cabundle/gd_bundle-g2-g1.crt ) >> "$@"
 	( echo ""; echo "Comodo PositiveSSL Intermediates"; echo "=================="; cat artifacts/cabundle/COMODO_DV_SHA-256_bundle.crt ) >> "$@"
+
+artifacts/make/%/Makefile:
+	curl -sf https://jmalloc.github.io/makefiles/fetch | bash /dev/stdin $*
