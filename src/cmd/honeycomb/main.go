@@ -120,7 +120,7 @@ func main() {
 		ErrorLog: logger,
 	}
 
-	go redirectServer(config)
+	go redirectServer(config, logger)
 
 	listener, err := net.Listen("tcp", ":"+config.Port)
 	if err != nil {
@@ -227,9 +227,18 @@ func rootCAPool(
 	return pool
 }
 
-func redirectServer(config *cmd.Config) {
-	http.ListenAndServe(
-		":"+config.InsecurePort,
+func redirectServer(config *cmd.Config, logger *log.Logger) {
+	listener, err := net.Listen("tcp", ":"+config.InsecurePort)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	if config.ProxyProtocol {
+		listener = proxyprotocol.NewListener(listener)
+	}
+
+	http.Serve(
+		listener,
 		http.HandlerFunc(redirectHandler),
 	)
 }
