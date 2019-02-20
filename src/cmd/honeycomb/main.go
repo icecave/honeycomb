@@ -75,10 +75,24 @@ func main() {
 		SecondaryProvider: secondaryCertProvider,
 	}
 
+	rootCACertPool := rootCAPool(config, logger)
+
 	tlsConfig := &tls.Config{
 		GetCertificate: providerAdaptor.GetCertificate,
 		Certificates:   []tls.Certificate{*defaultCertificate},
-		RootCAs:        rootCAPool(config, logger),
+		RootCAs:        rootCACertPool,
+	}
+
+	httpProxyTransport := &http.Transport{
+		Proxy:                 http.DefaultTransport.(*http.Transport).Proxy,
+		DialContext:           http.DefaultTransport.(*http.Transport).DialContext,
+		MaxIdleConns:          http.DefaultTransport.(*http.Transport).MaxIdleConns,
+		IdleConnTimeout:       http.DefaultTransport.(*http.Transport).IdleConnTimeout,
+		TLSHandshakeTimeout:   http.DefaultTransport.(*http.Transport).TLSHandshakeTimeout,
+		ExpectContinueTimeout: http.DefaultTransport.(*http.Transport).ExpectContinueTimeout,
+		TLSClientConfig: &tls.Config{
+			RootCAs: rootCACertPool,
+		},
 	}
 
 	prepareTLSConfig(tlsConfig)
@@ -88,8 +102,10 @@ func main() {
 		TLSConfig: tlsConfig,
 		Handler: &frontend.Handler{
 			Proxy: &proxy.Handler{
-				Locator:        locator,
-				HTTPProxy:      &proxy.HTTPProxy{},
+				Locator: locator,
+				HTTPProxy: &proxy.HTTPProxy{
+					Transport: httpProxyTransport,
+				},
 				WebSocketProxy: &proxy.WebSocketProxy{},
 				Logger:         logger,
 			},
