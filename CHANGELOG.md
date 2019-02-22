@@ -1,9 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- **[NEW]** Changed from old Makefile framework to newer [jmalloc/makefiles](https://github.com/jmalloc/makefiles)
-
 ## 0.3.4 (2019-02-20)
 
 - **[FIX]** Generated certificates now include the issuer CA certificate in the chain (thanks [@koshatul])
