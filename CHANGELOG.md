@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.5 (2019-03-28)
+
+- **[IMPROVED]** Don't require a `honeycomb.match` label on every service (`honeycomb.match.<whatever>`) is sufficient
+- **[NEW]** Add support for "insecure" upstream hosts by setting `honeycomb.tls` to `insecure`
+
 ## 0.3.4 (2019-02-20)
 
 - **[FIX]** Generated certificates now include the issuer CA certificate in the chain (thanks [@koshatul])
