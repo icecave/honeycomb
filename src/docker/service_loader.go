@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/icecave/honeycomb/src/name"
 )
@@ -23,9 +22,7 @@ type ServiceLoader struct {
 func (loader *ServiceLoader) Load(
 	ctx context.Context,
 ) ([]ServiceInfo, error) {
-	filter := filters.NewArgs()
-	filter.Add("label", matchLabel)
-	options := types.ServiceListOptions{Filters: filter}
+	options := types.ServiceListOptions{}
 
 	services, err := loader.Client.ServiceList(ctx, options)
 	if err != nil {
