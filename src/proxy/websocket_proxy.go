@@ -27,11 +27,7 @@ func (proxy *WebSocketProxy) Forward(
 	}
 
 	// Connect to the upstream server ...
-	dialer := proxy.Dialer
-	if dialer == nil {
-		dialer = DefaultWebSocketDialer
-	}
-	upstreamConnection, err := dialer.Dial(upstreamRequest)
+	upstreamConnection, err := proxy.Dialer.Dial(upstreamRequest)
 	if err != nil {
 		return statuspage.Error{Inner: err, StatusCode: http.StatusBadGateway}
 	}

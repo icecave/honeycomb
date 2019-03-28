@@ -7,24 +7,20 @@ import (
 	"strings"
 )
 
-// DefaultWebSocketDialer is the default dialer to use for connecting to
-// upstream websocket servers.
-var DefaultWebSocketDialer = &webSocketDialer{}
-
 // WebSocketDialer connects to an upstream websocket server.
 type WebSocketDialer interface {
 	// Dial connects to the websocket server described by request.
 	Dial(*http.Request) (net.Conn, error)
 }
 
-// webSocketDialer is the default WebSocketDialer implementation.
-type webSocketDialer struct {
+// BasicWebSocketDialer is the default WebSocketDialer implementation.
+type BasicWebSocketDialer struct {
 	Dialer    *net.Dialer
 	TLSConfig *tls.Config
 }
 
 // Dial connects to the websocket server described by request.
-func (dialer *webSocketDialer) Dial(
+func (dialer *BasicWebSocketDialer) Dial(
 	request *http.Request,
 ) (net.Conn, error) {
 	actual := dialer.Dialer

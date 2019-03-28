@@ -14,11 +14,13 @@ import (
 
 // Handler is an http.Handler that proxies requests to an upstream server.
 type Handler struct {
-	Locator          backend.Locator
-	HTTPProxy        Proxy
-	WebSocketProxy   Proxy
-	StatusPageWriter statuspage.Writer
-	Logger           *log.Logger
+	Locator                backend.Locator
+	SecureHTTPProxy        Proxy
+	InsecureHTTPProxy      Proxy
+	SecureWebSocketProxy   Proxy
+	InsecureWebSocketProxy Proxy
+	StatusPageWriter       statuspage.Writer
+	Logger                 *log.Logger
 }
 
 // ServeHTTP proxies the request to the appropriate upstream server.
@@ -51,12 +53,7 @@ func (handler *Handler) forward(
 
 	logContext.Endpoint = endpoint
 
-	var proxy Proxy
-	if isWebSocket {
-		proxy = handler.WebSocketProxy
-	} else {
-		proxy = handler.HTTPProxy
-	}
+	proxy := handler.selectProxy(endpoint, isWebSocket)
 
 	return proxy.Forward(
 		writer,
@@ -102,16 +99,16 @@ func (handler *Handler) prepareUpstreamRequest(
 	upstreamURL.Host = endpoint.Address
 
 	if isWebSocket {
-		if endpoint.IsTLS {
-			upstreamURL.Scheme = "wss"
-		} else {
+		if endpoint.TLSMode == backend.TLSDisabled {
 			upstreamURL.Scheme = "ws"
+		} else {
+			upstreamURL.Scheme = "wss"
 		}
 	} else {
-		if endpoint.IsTLS {
-			upstreamURL.Scheme = "https"
-		} else {
+		if endpoint.TLSMode == backend.TLSDisabled {
 			upstreamURL.Scheme = "http"
+		} else {
+			upstreamURL.Scheme = "https"
 		}
 	}
 
@@ -145,6 +142,23 @@ func (handler *Handler) prepareUpstreamHeaders(request *http.Request, isWebSocke
 	}
 
 	return upstreamHeaders
+}
+
+// selectProxy returns the proxy used to connect to the given endpoint.
+func (handler *Handler) selectProxy(endpoint *backend.Endpoint, isWebSocket bool) Proxy {
+	if endpoint.TLSMode == backend.TLSInsecure {
+		if isWebSocket {
+			return handler.InsecureWebSocketProxy
+		}
+
+		return handler.InsecureHTTPProxy
+	}
+
+	if isWebSocket {
+		return handler.SecureWebSocketProxy
+	}
+
+	return handler.SecureHTTPProxy
 }
 
 // writeStatusPage responds with a status page for the given error.

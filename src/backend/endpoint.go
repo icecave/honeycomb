@@ -10,8 +10,22 @@ type Endpoint struct {
 	// port number or name.
 	Address string
 
-	// IsTLS indicates whether or not the back-end server is expecting a TLS
-	// connection. If true, the "https://" or "wss://" scheme is used; otherwise,
-	// "http://" or "ws://" is used.
-	IsTLS bool
+	// TLSMode indicates whether or not the back-end server is expecting a TLS
+	// connection.
+	TLSMode TLSMode
 }
+
+// TLSMode is an enumerationo of the TLS "modes" used by an endpoint.
+type TLSMode int
+
+const (
+	// TLSDisabled indicates that the endpoint does not use TLS.
+	TLSDisabled TLSMode = iota
+
+	// TLSEnabled indicates that the endpoint does use TLS.
+	TLSEnabled
+
+	// TLSInsecure indicates that the endpoint does use TLS, but that its
+	// certificate details should not be verified.
+	TLSInsecure
+)

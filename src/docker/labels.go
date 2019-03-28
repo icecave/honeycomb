@@ -3,6 +3,6 @@ package docker
 const (
 	matchLabel       = "honeycomb.match"
 	portLabel        = "honeycomb.port"
-	isTLSLabel       = "honeycomb.tls"
+	tlsLabel         = "honeycomb.tls"
 	descriptionLabel = "honeycomb.description"
 )
