@@ -1,13 +1,13 @@
 hash: 9dcfc7e0e9fc6cbca7f14239952a4a2edabac4cd6fd7c9dcd8f9d1901b4c85de
-updated: 2019-02-11T09:43:35.228978+10:00
+updated: 2019-03-28T14:38:32.987403+10:00
 imports:
 - name: github.com/docker/distribution
-  version: 0d3efadf0154c2b8a4e7b6621fff9809655cc580
+  version: 6d62eb1d4a3515399431b713fde3ce5a9b40e8d5
   subpackages:
   - digestset
   - reference
 - name: github.com/docker/docker
-  version: 98dcded647d9f13860266b24683ca65eef5060f6
+  version: 8422e6f6fa04eb8ee805a98067ee490a86ce3b98
   subpackages:
   - api
   - api/types
@@ -34,11 +34,11 @@ imports:
   - sockets
   - tlsconfig
 - name: github.com/docker/go-units
-  version: 2fb04c6466a548a03cb009c5569ee1ab1e35398e
+  version: 47565b4f722fb6ceae66b95f853feed578a4a51c
 - name: github.com/dustin/go-humanize
   version: 9f541cc9db5d55bce703bd99987c9d5cb8eea45e
 - name: github.com/gogo/protobuf
-  version: 8e4a75f11384d0fb2188d872d456407e41f33fc0
+  version: c5a62797aee0054613cc578653a16c6237fef080
   subpackages:
   - proto
 - name: github.com/golang/gddo
@@ -47,9 +47,9 @@ imports:
   - httputil
   - httputil/header
 - name: github.com/Microsoft/go-winio
-  version: 75bf6ca3d7cb77506c52495e61472c131a254d56
+  version: 4de24ed3e8c509e6d1f609a8cb6b1c9fd9816e6d
 - name: github.com/onsi/ginkgo
-  version: f4937865e46ae8fd3aff745450e1b51b4aad3552
+  version: 505cc352255139defb7371000668063d1161e331
   subpackages:
   - config
   - extensions/table
@@ -71,7 +71,7 @@ imports:
   - reporters/stenographer/support/go-isatty
   - types
 - name: github.com/onsi/gomega
-  version: 5533ce8a0da374da682cd53d70ddcc54adf1a710
+  version: e0d4387cf37d6cc3baeb80f61bd24a37e5dfae26
   subpackages:
   - format
   - internal/assertion
@@ -85,16 +85,16 @@ imports:
   - matchers/support/goraph/util
   - types
 - name: github.com/opencontainers/go-digest
-  version: 4eb64ca734023ea9a10c70ff11dc0e3f69d38482
+  version: ac19fd6e7483ff933754af248d80be865e543d22
 - name: github.com/opencontainers/image-spec
-  version: befc3cba3ffdf76e2f72f52a248a20a2727cc4c9
+  version: 243ea084a44451d27322fed02b682d99e2af3ba9
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/pires/go-proxyproto
   version: 4d51b51e3bfc23ac5f4384478ff64940f34a5d63
 - name: github.com/pkg/errors
-  version: ffb6e22f01932bf7ac35e0bad9be11f01d1c8685
+  version: 27936f6d90f9c8e1145f11ed52ffffbfdb9e0af7
 - name: golang.org/x/net
   version: b60f3a92103dfd93dfcb900ec77c6d0643510868
   subpackages:
