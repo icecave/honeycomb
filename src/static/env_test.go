@@ -24,47 +24,47 @@ var _ = Describe("FromEnv", func() {
 			Entry("TLS (https)", "ROUTE_FOO=foo.* https://foo.backend.com:1234", &backend.Endpoint{
 				Description: "FOO",
 				Address:     "foo.backend.com:1234",
-				IsTLS:       true,
+				TLSMode:     backend.TLSEnabled,
 			}),
 			Entry("non-TLS (http)", "ROUTE_FOO=foo.* http://foo.backend.com:1234", &backend.Endpoint{
 				Description: "FOO",
 				Address:     "foo.backend.com:1234",
-				IsTLS:       false,
+				TLSMode:     backend.TLSDisabled,
 			}),
 			Entry("TLS (wss)", "ROUTE_FOO=foo.* wss://foo.backend.com:1234", &backend.Endpoint{
 				Description: "FOO",
 				Address:     "foo.backend.com:1234",
-				IsTLS:       true,
+				TLSMode:     backend.TLSEnabled,
 			}),
 			Entry("non-TLS (ws)", "ROUTE_FOO=foo.* ws://foo.backend.com:1234", &backend.Endpoint{
 				Description: "FOO",
 				Address:     "foo.backend.com:1234",
-				IsTLS:       false,
+				TLSMode:     backend.TLSDisabled,
 			}),
 			Entry("TLS (https, implicit port)", "ROUTE_FOO=foo.* https://foo.backend.com", &backend.Endpoint{
 				Description: "FOO",
 				Address:     "foo.backend.com:443",
-				IsTLS:       true,
+				TLSMode:     backend.TLSEnabled,
 			}),
 			Entry("non-TLS (http, implicit port)", "ROUTE_FOO=foo.* http://foo.backend.com", &backend.Endpoint{
 				Description: "FOO",
 				Address:     "foo.backend.com:80",
-				IsTLS:       false,
+				TLSMode:     backend.TLSDisabled,
 			}),
 			Entry("TLS (wss, implicit port)", "ROUTE_FOO=foo.* wss://foo.backend.com", &backend.Endpoint{
 				Description: "FOO",
 				Address:     "foo.backend.com:443",
-				IsTLS:       true,
+				TLSMode:     backend.TLSEnabled,
 			}),
 			Entry("non-TLS (ws, implicit port)", "ROUTE_FOO=foo.* ws://foo.backend.com", &backend.Endpoint{
 				Description: "FOO",
 				Address:     "foo.backend.com:80",
-				IsTLS:       false,
+				TLSMode:     backend.TLSDisabled,
 			}),
 			Entry("custom description", "ROUTE_FOO=foo.* https://foo.backend.com:1234 This is the description!", &backend.Endpoint{
 				Description: "This is the description!",
 				Address:     "foo.backend.com:1234",
-				IsTLS:       true,
+				TLSMode:     backend.TLSEnabled,
 			}),
 		)
 

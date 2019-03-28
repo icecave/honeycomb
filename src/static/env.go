@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/name"
@@ -48,20 +49,23 @@ func fromEnv(env []string) (Locator, error) {
 			return nil, err
 		}
 
-		isTLS := u.Scheme == "https" || u.Scheme == "wss"
+		tlsMode := backend.TLSDisabled
+		if strings.EqualFold(u.Scheme, "https") || strings.EqualFold(u.Scheme, "wss") {
+			tlsMode = backend.TLSEnabled
+		}
 
 		if port := u.Port(); port == "" {
-			if isTLS {
-				u.Host += ":443"
-			} else {
+			if tlsMode == backend.TLSDisabled {
 				u.Host += ":80"
+			} else {
+				u.Host += ":443"
 			}
 		}
 
 		endpoint := &backend.Endpoint{
 			Description: groups[tagIndex],
 			Address:     u.Host,
-			IsTLS:       isTLS,
+			TLSMode:     tlsMode,
 		}
 
 		if groups[descriptionIndex] != "" {

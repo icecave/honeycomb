@@ -28,7 +28,7 @@ func (inspector *ServiceInspector) Inspect(
 		return nil, err
 	}
 
-	isTLS, err := inspector.isTLS(service, port)
+	tlsMode, err := inspector.tlsMode(service, port)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func (inspector *ServiceInspector) Inspect(
 	return &backend.Endpoint{
 		Description: inspector.description(service),
 		Address:     net.JoinHostPort(service.Spec.Name, port),
-		IsTLS:       isTLS,
+		TLSMode:     tlsMode,
 	}, nil
 }
 
@@ -58,20 +58,22 @@ func (inspector *ServiceInspector) description(service *swarm.Service) string {
 	return ref.String()
 }
 
-func (inspector *ServiceInspector) isTLS(
+func (inspector *ServiceInspector) tlsMode(
 	service *swarm.Service,
 	port string,
-) (bool, error) {
-	if value, ok := service.Spec.Labels[isTLSLabel]; ok {
+) (backend.TLSMode, error) {
+	if value, ok := service.Spec.Labels[tlsLabel]; ok {
 		switch value {
-		case "true":
-			return true, nil
-		case "false":
-			return false, nil
+		case "true", "enabled":
+			return backend.TLSEnabled, nil
+		case "false", "disabled":
+			return backend.TLSDisabled, nil
+		case "insecure":
+			return backend.TLSInsecure, nil
 		default:
-			return false, fmt.Errorf(
-				"invalid '%s' label (%s), expected true or false",
-				isTLSLabel,
+			return backend.TLSDisabled, fmt.Errorf(
+				"invalid '%s' label (%s), expected 'enabled', 'disabled' or 'insecure'",
+				tlsLabel,
 				value,
 			)
 		}
@@ -80,9 +82,9 @@ func (inspector *ServiceInspector) isTLS(
 	numeric, _ := net.LookupPort("tcp", port)
 	switch numeric {
 	case 443, 8443:
-		return true, nil
+		return backend.TLSEnabled, nil
 	default:
-		return false, nil
+		return backend.TLSDisabled, nil
 	}
 }
 

@@ -83,7 +83,7 @@ func main() {
 		RootCAs:        rootCACertPool,
 	}
 
-	httpProxyTransport := &http.Transport{
+	secureTransport := &http.Transport{
 		Proxy:                 http.DefaultTransport.(*http.Transport).Proxy,
 		DialContext:           http.DefaultTransport.(*http.Transport).DialContext,
 		MaxIdleConns:          http.DefaultTransport.(*http.Transport).MaxIdleConns,
@@ -95,6 +95,19 @@ func main() {
 		},
 	}
 
+	insecureTransport := &http.Transport{
+		Proxy:                 http.DefaultTransport.(*http.Transport).Proxy,
+		DialContext:           http.DefaultTransport.(*http.Transport).DialContext,
+		MaxIdleConns:          http.DefaultTransport.(*http.Transport).MaxIdleConns,
+		IdleConnTimeout:       http.DefaultTransport.(*http.Transport).IdleConnTimeout,
+		TLSHandshakeTimeout:   http.DefaultTransport.(*http.Transport).TLSHandshakeTimeout,
+		ExpectContinueTimeout: http.DefaultTransport.(*http.Transport).ExpectContinueTimeout,
+		TLSClientConfig: &tls.Config{
+			RootCAs:            rootCACertPool,
+			InsecureSkipVerify: true,
+		},
+	}
+
 	prepareTLSConfig(tlsConfig)
 
 	server := http.Server{
@@ -103,11 +116,23 @@ func main() {
 		Handler: &frontend.Handler{
 			Proxy: &proxy.Handler{
 				Locator: locator,
-				HTTPProxy: &proxy.HTTPProxy{
-					Transport: httpProxyTransport,
+				SecureHTTPProxy: &proxy.HTTPProxy{
+					Transport: secureTransport,
 				},
-				WebSocketProxy: &proxy.WebSocketProxy{},
-				Logger:         logger,
+				InsecureHTTPProxy: &proxy.HTTPProxy{
+					Transport: insecureTransport,
+				},
+				SecureWebSocketProxy: &proxy.WebSocketProxy{
+					Dialer: &proxy.BasicWebSocketDialer{
+						TLSConfig: secureTransport.TLSClientConfig,
+					},
+				},
+				InsecureWebSocketProxy: &proxy.WebSocketProxy{
+					Dialer: &proxy.BasicWebSocketDialer{
+						TLSConfig: secureTransport.TLSClientConfig,
+					},
+				},
+				Logger: logger,
 			},
 			HealthCheck: &health.HTTPHandler{
 				Checker: &health.SwarmChecker{

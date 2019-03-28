@@ -18,12 +18,7 @@ func (proxy *HTTPProxy) Forward(
 	upstreamRequest *http.Request,
 	logContext *LogContext,
 ) error {
-	transport := proxy.Transport
-	if transport == nil {
-		transport = http.DefaultTransport
-	}
-
-	upstreamResponse, err := transport.RoundTrip(upstreamRequest)
+	upstreamResponse, err := proxy.Transport.RoundTrip(upstreamRequest)
 	if err != nil {
 		return statuspage.Error{Inner: err, StatusCode: http.StatusBadGateway}
 	}
