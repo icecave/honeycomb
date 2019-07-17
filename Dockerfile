@@ -1,6 +1,6 @@
 FROM scratch
 
-HEALTHCHECK --interval=15s --timeout=500ms CMD ["/app/bin/healthcheck"]
+HEALTHCHECK --interval=15s --timeout=1500ms CMD ["/app/bin/healthcheck"]
 ENTRYPOINT ["/app/bin/honeycomb"]
 
 EXPOSE 8443
