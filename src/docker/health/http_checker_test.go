@@ -51,14 +51,6 @@ var _ = Describe("HTTPChecker", func() {
 
 		subject = &health.HTTPChecker{
 			Address: serverURL.Host,
-			Client: &http.Client{
-				Timeout: 500 * time.Millisecond,
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: true,
-					},
-				},
-			},
 		}
 
 		slowSubject = &health.HTTPChecker{
