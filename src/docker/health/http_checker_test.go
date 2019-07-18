@@ -1,12 +1,14 @@
 package health_test
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"time"
 
 	"github.com/icecave/honeycomb/src/docker/health"
 	. "github.com/onsi/ginkgo"
@@ -19,6 +21,9 @@ var _ = Describe("HTTPChecker", func() {
 		server          *httptest.Server
 		serverURL       *url.URL
 		subject         *health.HTTPChecker
+		slowServer      *httptest.Server
+		slowServerURL   *url.URL
+		slowSubject     *health.HTTPChecker
 		responseCode    int
 		responseMessage string
 	)
@@ -28,18 +33,50 @@ var _ = Describe("HTTPChecker", func() {
 		io.WriteString(response, responseMessage)
 	}
 
+	slowHandler := func(response http.ResponseWriter, request *http.Request) {
+		time.Sleep(time.Second)
+		response.WriteHeader(responseCode)
+		io.WriteString(response, responseMessage)
+	}
+
 	BeforeEach(func() {
 		server = httptest.NewUnstartedServer(http.HandlerFunc(handler))
 		server.StartTLS()
 
+		slowServer = httptest.NewUnstartedServer(http.HandlerFunc(slowHandler))
+		slowServer.StartTLS()
+
 		serverURL, _ = url.Parse(server.URL)
+		slowServerURL, _ = url.Parse(slowServer.URL)
+
 		subject = &health.HTTPChecker{
 			Address: serverURL.Host,
+			Client: &http.Client{
+				Timeout: 500 * time.Millisecond,
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: true,
+					},
+				},
+			},
+		}
+
+		slowSubject = &health.HTTPChecker{
+			Address: slowServerURL.Host,
+			Client: &http.Client{
+				Timeout: 500 * time.Millisecond,
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: true,
+					},
+				},
+			},
 		}
 	})
 
 	AfterEach(func() {
 		server.Close()
+		slowServer.Close()
 	})
 
 	DescribeTable(
@@ -88,6 +125,15 @@ var _ = Describe("HTTPChecker", func() {
 			}
 
 			Expect(subject.Check()).To(Equal(expected))
+		})
+
+		It("returns an unhealthy status when the check is too slow", func() {
+			expected := health.Status{
+				IsHealthy: false,
+				Message:   fmt.Sprintf("Get %s/.honeycomb/health-check: net/http: request canceled (Client.Timeout exceeded while awaiting headers)", slowServerURL),
+			}
+
+			Expect(slowSubject.Check()).To(Equal(expected))
 		})
 
 		It("returns an unhealthy status when the server is unreachable", func() {

@@ -54,5 +54,6 @@ func checkerHTTPClientProvider(config *cmd.Config) *http.Client {
 	}
 	return &http.Client{
 		Transport: transport,
+		Timeout:   config.CheckerTimeout,
 	}
 }
