@@ -14,7 +14,7 @@ type Config struct {
 	DockerPollInterval time.Duration
 	Certificates       certificateConfig
 	ProxyProtocol      bool
-	CheckerTimeout     time.Duration
+	CheckTimeout       time.Duration
 }
 
 type certificateConfig struct {
@@ -43,8 +43,8 @@ func GetConfigFromEnvironment() *Config {
 				",",
 			),
 		},
-		ProxyProtocol:  envBool("PROXY_PROTOCOL", false),
-		CheckerTimeout: envDuration("CHECK_TIMEOUT", 500*time.Millisecond),
+		ProxyProtocol: envBool("PROXY_PROTOCOL", false),
+		CheckTimeout:  envDuration("CHECK_TIMEOUT", 500*time.Millisecond),
 	}
 }
 
