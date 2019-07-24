@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.6 (2019-07-24)
+
+- **[IMPROVED]** Use a separate timeout for the healthcheck execution and the healtcheck itself
+
 ## 0.3.5 (2019-03-28)
 
 - **[IMPROVED]** Don't require a `honeycomb.match` label on every service (`honeycomb.match.<whatever>`) is sufficient
