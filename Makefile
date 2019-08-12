@@ -4,8 +4,16 @@ DOCKER_TAG  ?= dev
 REQ += $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
 DOCKER_REQ += artifacts/cacert.pem
 
+GIT_HASH ?= $(shell git show -s --format=%h)
+GIT_TAG ?= $(shell git tag -l --merged $(GIT_HASH) | tail -n1)
+APP_VERSION ?= $(if $(TRAVIS_TAG),$(TRAVIS_TAG),$(if $(GIT_TAG),$(GIT_TAG),$(GIT_HASH)))
+APP_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
 -include artifacts/make/go/Makefile
 -include artifacts/make/docker/Makefile
+
+DEBUG_ARGS = --ldflags "-X main.version=$(APP_VERSION)-debug"
+RELEASE_ARGS = -v -ldflags "-X main.version=$(APP_VERSION) -s -w" -tags release
 
 .PHONY: docker-services
 docker-services: docker

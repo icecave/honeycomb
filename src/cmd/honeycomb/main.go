@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -22,7 +23,10 @@ import (
 	"github.com/icecave/honeycomb/src/proxy"
 	"github.com/icecave/honeycomb/src/proxyprotocol"
 	"github.com/icecave/honeycomb/src/static"
+	"go.uber.org/multierr"
 )
+
+var version = "notset"
 
 func main() {
 	config := cmd.GetConfigFromEnvironment()
@@ -33,7 +37,7 @@ func main() {
 		logger.Fatalln(err)
 	}
 
-	dockerClient, err := client.NewEnvClient()
+	dockerClient, err := client.NewClientWithOpts(dockerClientFromEnvironment)
 	if err != nil {
 		logger.Fatalln(err)
 	}
@@ -162,6 +166,17 @@ func main() {
 	if err != nil {
 		logger.Fatalln(err)
 	}
+}
+
+func dockerClientFromEnvironment(c *client.Client) error {
+	return multierr.Append(
+		client.FromEnv(c),
+		client.WithHTTPHeaders(
+			map[string]string{
+				"User-Agent": fmt.Sprintf("Honeycomb/%s", version),
+			},
+		)(c),
+	)
 }
 
 func loadDefaultCertificate(config *cmd.Config) (*tls.Certificate, error) {
