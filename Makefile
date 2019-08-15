@@ -12,7 +12,7 @@ APP_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 -include artifacts/make/go/Makefile
 -include artifacts/make/docker/Makefile
 
-DEBUG_ARGS = --ldflags "-X main.version=$(APP_VERSION)-debug"
+DEBUG_ARGS = -v --ldflags "-X main.version=$(APP_VERSION)-debug"
 RELEASE_ARGS = -v -ldflags "-X main.version=$(APP_VERSION) -s -w" -tags release
 
 .PHONY: docker-services
