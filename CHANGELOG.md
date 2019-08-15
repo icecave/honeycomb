@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.7 (2019-08-15)
+
+- **[IMPROVED]** Use a more descriptive user agent when contacting the Docker API
+
 ## 0.3.6 (2019-07-24)
 
 - **[IMPROVED]** Use a separate timeout for the healthcheck execution and the healtcheck itself
