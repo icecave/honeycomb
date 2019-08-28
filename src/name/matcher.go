@@ -61,15 +61,32 @@ func NewMatcher(pattern string) (*Matcher, error) {
 }
 
 // Match checks if the pattern matches the given server name.
-func (matcher Matcher) Match(serverName ServerName) bool {
+//
+// It returns a score indicating the strength of the match. A value of 0 or less
+// indicates that no match was made.
+func (matcher Matcher) Match(serverName ServerName) int {
+	score := 1 + len(matcher.fixedPart)
+
 	if matcher.wildPrefix && matcher.wildSuffix {
-		return matcher.fixedPart == "" ||
-			strings.Contains(serverName.Unicode, matcher.fixedPart)
+		if strings.Contains(serverName.Unicode, matcher.fixedPart) {
+			return score
+		}
 	} else if matcher.wildPrefix {
-		return strings.HasSuffix(serverName.Unicode, matcher.fixedPart)
+		if strings.HasSuffix(serverName.Unicode, matcher.fixedPart) {
+			return score
+		}
 	} else if matcher.wildSuffix {
-		return strings.HasPrefix(serverName.Unicode, matcher.fixedPart)
+		if strings.HasPrefix(serverName.Unicode, matcher.fixedPart) {
+			return score
+		}
+	} else {
+		if serverName.Unicode == matcher.fixedPart {
+			// an exact match always scores higher that a wildcard match that matches
+			// the same number of characters.
+			const max = int(^uint(0) >> 1)
+			return max
+		}
 	}
 
-	return serverName.Unicode == matcher.fixedPart
+	return 0
 }

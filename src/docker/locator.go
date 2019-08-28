@@ -26,16 +26,26 @@ type Locator struct {
 }
 
 // Locate finds the back-end HTTP server for the given server name.
-func (locator *Locator) Locate(ctx context.Context, serverName name.ServerName) *backend.Endpoint {
+//
+// It returns a score indicating the strength of the match. A value of 0 or less
+// indicates that no match was made, in which case ep is nil.
+//
+// A non-zero score can be returned with a nil endpoint, indicating that the
+// request should not be routed.
+func (locator *Locator) Locate(
+	ctx context.Context,
+	serverName name.ServerName,
+) (ep *backend.Endpoint, score int) {
 	if services, ok := locator.services.Load().([]ServiceInfo); ok {
 		for _, info := range services {
-			if info.Matcher.Match(serverName) {
-				return info.Endpoint
+			if s := info.Matcher.Match(serverName); s > score {
+				ep = info.Endpoint
+				score = s
 			}
 		}
 	}
 
-	return nil
+	return ep, score
 }
 
 // Run polls Docker for service information until Stop() is called.

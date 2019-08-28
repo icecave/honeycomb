@@ -12,14 +12,24 @@ import (
 type Locator []matcherEndpointPair
 
 // Locate finds the back-end HTTP server for the given server name.
-func (locator Locator) Locate(_ context.Context, serverName name.ServerName) *backend.Endpoint {
+//
+// It returns a score indicating the strength of the match. A value of 0 or
+// less indicates that no match was made, in which case ep is nil.
+//
+// A non-zero score can be returned with a nil endpoint, indicating that the
+// request should not be routed.
+func (locator Locator) Locate(
+	_ context.Context,
+	serverName name.ServerName,
+) (ep *backend.Endpoint, score int) {
 	for _, item := range locator {
-		if item.Matcher.Match(serverName) {
-			return item.Endpoint
+		if s := item.Matcher.Match(serverName); s > score {
+			ep = item.Endpoint
+			score = s
 		}
 	}
 
-	return nil
+	return ep, score
 }
 
 // With returns a new StaticLocator that includes the given mapping.

@@ -18,7 +18,7 @@ var _ = Describe("FromEnv", func() {
 				locator, err := fromEnv([]string{env})
 				Expect(err).ShouldNot(HaveOccurred())
 
-				endpoint := locator.Locate(context.Background(), name.Parse("foo.com"))
+				endpoint, _ := locator.Locate(context.Background(), name.Parse("foo.com"))
 				Expect(endpoint).To(Equal(expected))
 			},
 			Entry("TLS (https)", "ROUTE_FOO=foo.* https://foo.backend.com:1234", &backend.Endpoint{
@@ -78,16 +78,18 @@ var _ = Describe("FromEnv", func() {
 
 			Expect(err).ShouldNot(HaveOccurred())
 
-			endpoint := locator.Locate(
+			endpoint, score := locator.Locate(
 				context.Background(),
 				name.Parse("foo.com"),
 			)
+			Expect(score).To(BeNumerically(">", 0))
 			Expect(endpoint.Address).To(Equal("foo.backend.com:1234"))
 
-			endpoint = locator.Locate(
+			endpoint, score = locator.Locate(
 				context.Background(),
 				name.Parse("bar.com"),
 			)
+			Expect(score).To(BeNumerically(">", 0))
 			Expect(endpoint.Address).To(Equal("bar.backend.com:1234"))
 		})
 

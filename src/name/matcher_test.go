@@ -51,10 +51,11 @@ var _ = Describe("Matcher", func() {
 
 	Describe("Match", func() {
 		DescribeTable(
-			"it returns true when passed a matching server name",
+			"it returns a positive score when passed a matching server name",
 			func(pattern, serverName string) {
 				subject, _ := name.NewMatcher(pattern)
-				Expect(subject.Match(name.Parse(serverName))).To(BeTrue())
+				score := subject.Match(name.Parse(serverName))
+				Expect(score).To(BeNumerically(">", 0))
 			},
 			Entry("exact match", "host.dømåin-name.tld", "host.dømåin-name.tld"),
 			Entry("wildcard prefix", "*.dømåin-name.tld", "host.dømåin-name.tld"),
@@ -65,10 +66,11 @@ var _ = Describe("Matcher", func() {
 		)
 
 		DescribeTable(
-			"it returns false when passed a non-matching server name",
+			"it returns a non-positive score when passed a non-matching server name",
 			func(pattern, serverName string) {
 				subject, _ := name.NewMatcher(pattern)
-				Expect(subject.Match(name.Parse(serverName))).To(BeFalse())
+				score := subject.Match(name.Parse(serverName))
+				Expect(score).To(BeNumerically("<=", 0))
 			},
 			Entry("exact match", "host.dømåin-name.tld", "host.different.tld"),
 			Entry("wildcard prefix", "*.dømåin-name.tld", "host.different.tld"),
@@ -76,5 +78,33 @@ var _ = Describe("Matcher", func() {
 			Entry("wildcard", "*.dømåin-name.*", "host.different.tld"),
 			Entry("catch all with dot", "*.*", "no-dot"),
 		)
+
+		It("scores wildcard matches appropriately", func() {
+			serverName := name.Parse("w.prefix.example.x")
+
+			// note: subject3 is an exact matcher for the server name, but as
+			// the same "fixedPart" length as the wildcard subject4, yet it must
+			// still score higher.
+			subject1, _ := name.NewMatcher("*")
+			subject2, _ := name.NewMatcher("*.example.*")
+			subject3, _ := name.NewMatcher("*.prefix.example.*")
+			subject4, _ := name.NewMatcher("w.prefix.example.x")
+
+			score1 := subject1.Match(serverName)
+			Expect(score1).To(BeNumerically(">", 0))
+
+			score2 := subject2.Match(serverName)
+			Expect(score2).To(BeNumerically(">", 0))
+
+			score3 := subject3.Match(serverName)
+			Expect(score3).To(BeNumerically(">", 0))
+
+			score4 := subject4.Match(serverName)
+			Expect(score4).To(BeNumerically(">", 0))
+
+			Expect(score1).To(BeNumerically("<", score2))
+			Expect(score2).To(BeNumerically("<", score3))
+			Expect(score3).To(BeNumerically("<", score4))
+		})
 	})
 })
