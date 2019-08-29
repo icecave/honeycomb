@@ -1,7 +1,8 @@
 package: github.com/icecave/honeycomb
 import:
 - package: github.com/docker/docker
-  version: master
+  version: ~18.09
+  repo: git@github.com:docker/engine.git
   subpackages:
   - api/types
   - client
