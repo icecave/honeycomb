@@ -20,14 +20,6 @@ type cacheEntry struct {
 	Score    int
 }
 
-// Clear clears the cache.
-func (c *Cache) Clear() {
-	c.m.Lock()
-	defer c.m.Unlock()
-
-	c.cache = nil
-}
-
 // Locate finds the back-end HTTP server for the given server name.
 //
 // It returns a score indicating the strength of the match. A value of 0 or
@@ -56,4 +48,12 @@ func (c *Cache) Locate(ctx context.Context, serverName name.ServerName) (ep *End
 	c.cache[serverName] = cacheEntry{ep, score}
 
 	return ep, score
+}
+
+// Clear clears the cache.
+func (c *Cache) Clear() {
+	c.m.Lock()
+	defer c.m.Unlock()
+
+	c.cache = nil
 }
