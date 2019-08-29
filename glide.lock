@@ -1,5 +1,5 @@
-hash: 6cd8808f5ddb15045dd200bd7a13092c7cde9ddf542321f817eb201656852f5e
-updated: 2019-08-29T10:33:42.329931+10:00
+hash: 63cbcfc16a2200cfe1efe108d10e5abf4e93fc6e43e4a1d8aef1376e9ea31f27
+updated: 2019-08-29T10:43:31.247468+10:00
 imports:
 - name: github.com/docker/distribution
   version: 7484e51bf6af0d3b1a849644cdaced3cfcf13617
@@ -8,7 +8,7 @@ imports:
   - reference
 - name: github.com/docker/docker
   version: 456712c5b8d9d92c047f6a7d7cff270527ecac28
-  repo: git@github.com:docker/engine.git
+  repo: https://github.com/docker/engine.git
   subpackages:
   - api
   - api/types
