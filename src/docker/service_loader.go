@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/icecave/honeycomb/src/name"
 )
@@ -32,6 +33,11 @@ func (loader *ServiceLoader) Load(
 	var result []ServiceInfo
 
 	for _, service := range services {
+		matchers := loader.matchers(service)
+		if len(matchers) == 0 {
+			continue
+		}
+
 		endpoint, err := loader.Inspector.Inspect(ctx, &service)
 		if err != nil {
 			loader.Logger.Printf(
@@ -43,28 +49,39 @@ func (loader *ServiceLoader) Load(
 			continue
 		}
 
-		for key, value := range service.Spec.Annotations.Labels {
-			if key == matchLabel || strings.HasPrefix(key, matchLabel+".") {
-				matcher, err := name.NewMatcher(value)
-
-				if err != nil {
-					loader.Logger.Printf(
-						"Can not route to '%s' (%s) via '%s', %s",
-						service.Spec.Name,
-						service.Spec.TaskTemplate.ContainerSpec.Image,
-						value,
-						err,
-					)
-				} else {
-					result = append(result, ServiceInfo{
-						Name:     service.Spec.Name,
-						Matcher:  matcher,
-						Endpoint: endpoint,
-					})
-				}
-			}
+		for _, matcher := range matchers {
+			result = append(result, ServiceInfo{
+				Name:     service.Spec.Name,
+				Matcher:  matcher,
+				Endpoint: endpoint,
+			})
 		}
 	}
 
 	return result, nil
+}
+
+func (loader *ServiceLoader) matchers(service swarm.Service) []*name.Matcher {
+	var result []*name.Matcher
+
+	for key, value := range service.Spec.Annotations.Labels {
+		if key == matchLabel || strings.HasPrefix(key, matchLabel+".") {
+			matcher, err := name.NewMatcher(value)
+
+			if err != nil {
+				loader.Logger.Printf(
+					"Can not route to '%s' (%s) via '%s', %s",
+					service.Spec.Name,
+					service.Spec.TaskTemplate.ContainerSpec.Image,
+					value,
+					err,
+				)
+				continue
+			}
+
+			result = append(result, matcher)
+		}
+	}
+
+	return result
 }
