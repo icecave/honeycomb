@@ -19,6 +19,7 @@ const DefaultPollInterval = 30 * time.Second
 type Locator struct {
 	PollInterval time.Duration
 	Loader       *ServiceLoader
+	Cache        *backend.Cache
 	Logger       *log.Logger
 
 	done     chan struct{}
@@ -55,7 +56,9 @@ func (locator *Locator) Run() {
 	}
 
 	services := locator.load()
-	locator.diff(nil, services)
+	if locator.diff(nil, services) {
+		locator.Cache.Clear()
+	}
 
 	pollInterval := locator.PollInterval
 	if pollInterval == 0 {
@@ -66,7 +69,9 @@ func (locator *Locator) Run() {
 		select {
 		case <-time.After(pollInterval):
 			s := locator.load()
-			locator.diff(services, s)
+			if locator.diff(services, s) {
+				locator.Cache.Clear()
+			}
 			services = s
 		case <-locator.done:
 			return
@@ -91,7 +96,9 @@ func (locator *Locator) load() []ServiceInfo {
 	return new
 }
 
-func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) {
+func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) bool {
+	diff := false
+
 	for _, info := range old {
 		log := true
 		for _, other := range new {
@@ -102,6 +109,7 @@ func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) {
 		}
 
 		if log {
+			diff = true
 			locator.Logger.Printf(
 				"Removed route from '%s' to '%s' (%s)",
 				info.Matcher.Pattern,
@@ -121,6 +129,7 @@ func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) {
 		}
 
 		if log {
+			diff = true
 			locator.Logger.Printf(
 				"Added route from '%s' to '%s' (%s)",
 				info.Matcher.Pattern,
@@ -129,4 +138,6 @@ func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) {
 			)
 		}
 	}
+
+	return diff
 }
