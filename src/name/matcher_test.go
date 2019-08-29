@@ -82,9 +82,6 @@ var _ = Describe("Matcher", func() {
 		It("scores wildcard matches appropriately", func() {
 			serverName := name.Parse("w.prefix.example.x")
 
-			// note: subject3 is an exact matcher for the server name, but as
-			// the same "fixedPart" length as the wildcard subject4, yet it must
-			// still score higher.
 			subject1, _ := name.NewMatcher("*")
 			subject2, _ := name.NewMatcher("*.example.*")
 			subject3, _ := name.NewMatcher("*.prefix.example.*")

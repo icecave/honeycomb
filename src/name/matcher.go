@@ -81,10 +81,7 @@ func (matcher Matcher) Match(serverName ServerName) int {
 		}
 	} else {
 		if serverName.Unicode == matcher.fixedPart {
-			// an exact match always scores higher that a wildcard match that matches
-			// the same number of characters.
-			const max = int(^uint(0) >> 1)
-			return max
+			return score
 		}
 	}
 
