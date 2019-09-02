@@ -1,18 +1,14 @@
-hash: 19aa7a497002e4e1a276bd3029af29255a09fb8917369a8121cc75a81ca7fcfc
-updated: 2019-08-12T13:47:28.490696+10:00
+hash: 63cbcfc16a2200cfe1efe108d10e5abf4e93fc6e43e4a1d8aef1376e9ea31f27
+updated: 2019-08-29T10:43:31.247468+10:00
 imports:
-- name: github.com/containerd/containerd
-  version: ea13c9fe9941b0714630aa614ef5a0038c0083a3
-  subpackages:
-  - errdefs
 - name: github.com/docker/distribution
   version: 7484e51bf6af0d3b1a849644cdaced3cfcf13617
   subpackages:
   - digestset
   - reference
-  - registry/api/errcode
 - name: github.com/docker/docker
-  version: 90af4ba5e7fa5a75387a06f8987c30217f05d618
+  version: 456712c5b8d9d92c047f6a7d7cff270527ecac28
+  repo: https://github.com/docker/engine.git
   subpackages:
   - api
   - api/types
@@ -51,21 +47,10 @@ imports:
   subpackages:
   - httputil
   - httputil/header
-- name: github.com/golang/protobuf
-  version: 130e6b02ab059e7b717a096f397c5b60111cae74
-  subpackages:
-  - proto
-  - protoc-gen-go/descriptor
-  - ptypes
-  - ptypes/any
-  - ptypes/duration
-  - ptypes/empty
-  - ptypes/struct
-  - ptypes/timestamp
 - name: github.com/Microsoft/go-winio
   version: 4de24ed3e8c509e6d1f609a8cb6b1c9fd9816e6d
 - name: github.com/onsi/ginkgo
-  version: 0ecbc58698389c4a38c1b07e092f686286a73013
+  version: 66915d68818eb42dadcd44b3e2e3a3bf75da2a74
   subpackages:
   - config
   - extensions/table
@@ -87,7 +72,7 @@ imports:
   - reporters/stenographer/support/go-isatty
   - types
 - name: github.com/onsi/gomega
-  version: 2e3b965217103f3054061bd78cb31bca3e94a0da
+  version: bdebf9e0ece900259084cfa4121b97ce1a540939
   subpackages:
   - format
   - internal/assertion
@@ -111,19 +96,15 @@ imports:
   version: 4d51b51e3bfc23ac5f4384478ff64940f34a5d63
 - name: github.com/pkg/errors
   version: 27936f6d90f9c8e1145f11ed52ffffbfdb9e0af7
-- name: github.com/sirupsen/logrus
-  version: c155da19408a8799da419ed3eeb0cb5db0ad5dbc
 - name: go.uber.org/atomic
   version: df976f2515e274675050de7b3f42545de80594fd
 - name: go.uber.org/multierr
   version: 3c4937480c32f4c13a875a1829af76c98ca3d40a
-- name: golang.org/x/crypto
-  version: b3c9a1d25cfbbbab0ff4780b71c4f54e6e92a0de
-  subpackages:
-  - ssh/terminal
 - name: golang.org/x/net
   version: b60f3a92103dfd93dfcb900ec77c6d0643510868
   subpackages:
+  - context
+  - context/ctxhttp
   - html
   - html/atom
   - html/charset
@@ -155,27 +136,10 @@ imports:
   - transform
   - unicode/bidi
   - unicode/norm
-- name: google.golang.org/genproto
-  version: 1e559d0a00eef8a9a43151db4665280bd8dd5886
-  subpackages:
-  - googleapis/api/annotations
-  - googleapis/api/distribution
-  - googleapis/api/label
-  - googleapis/api/metric
-  - googleapis/api/monitoredres
-  - googleapis/iam/v1
-  - googleapis/logging/type
-  - googleapis/logging/v2
-  - googleapis/pubsub/v1
-  - googleapis/rpc/status
-  - protobuf/field_mask
 - name: google.golang.org/grpc
-  version: 045159ad57f3781d409358e3ade910a018c16b30
+  version: 7150a7c70aef304650b166dfc30a1a2287cad773
   subpackages:
   - codes
-  - connectivity
-  - grpclog
-  - internal
   - status
 testImports:
 - name: github.com/hpcloud/tail

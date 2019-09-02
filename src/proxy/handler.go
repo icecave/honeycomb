@@ -74,7 +74,7 @@ func (handler *Handler) locate(request *http.Request) (*backend.Endpoint, error)
 		}
 	}
 
-	endpoint := handler.Locator.Locate(request.Context(), serverName)
+	endpoint, _ := handler.Locator.Locate(request.Context(), serverName)
 	if endpoint == nil {
 		return nil, statuspage.Error{
 			Inner:      errors.New("could not locate backend"),

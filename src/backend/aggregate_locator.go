@@ -10,12 +10,22 @@ import (
 type AggregateLocator []Locator
 
 // Locate finds the back-end HTTP server for the given server name.
-func (locator AggregateLocator) Locate(ctx context.Context, serverName name.ServerName) *Endpoint {
+//
+// It returns a score indicating the strength of the match. A value of 0 or
+// less indicates that no match was made, in which case ep is nil.
+//
+// A non-zero score can be returned with a nil endpoint, indicating that the
+// request should not be routed.
+func (locator AggregateLocator) Locate(
+	ctx context.Context,
+	serverName name.ServerName,
+) (ep *Endpoint, score int) {
 	for _, loc := range locator {
-		if endpoint := loc.Locate(ctx, serverName); endpoint != nil {
-			return endpoint
+		if e, s := loc.Locate(ctx, serverName); s > score {
+			ep = e
+			score = s
 		}
 	}
 
-	return nil
+	return ep, score
 }

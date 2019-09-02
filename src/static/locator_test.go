@@ -24,29 +24,46 @@ var _ = Describe("Locator", func() {
 
 	Describe("Locate", func() {
 		It("matches the endpoints", func() {
-			endpoint := subject.Locate(
+			endpoint, score := subject.Locate(
 				context.Background(),
 				name.Parse("foo"),
 			)
 			Expect(endpoint).ShouldNot(BeNil())
 			Expect(endpoint.Address).To(Equal("foo:443"))
+			Expect(score).To(BeNumerically(">", 0))
 		})
 
 		It("matches the endpoints in order", func() {
-			endpoint := subject.Locate(
+			endpoint, score := subject.Locate(
 				context.Background(),
 				name.Parse("bar"),
 			)
 			Expect(endpoint).ShouldNot(BeNil())
 			Expect(endpoint.Address).To(Equal("bar1:443"))
+			Expect(score).To(BeNumerically(">", 0))
 		})
 
-		It("returns nil if none of the endpoints match", func() {
-			endpoint := subject.Locate(
+		It("returns nil and a non-positive score if none of the endpoints match", func() {
+			endpoint, score := subject.Locate(
 				context.Background(),
 				name.Parse("unknown"),
 			)
 			Expect(endpoint).To(BeNil())
+			Expect(score).To(BeNumerically("<=", 0))
+		})
+
+		It("returns the endpoint with the highest match score", func() {
+			subject = static.Locator{}.
+				With("*.example.*", &backend.Endpoint{Address: "static1:443"}).
+				With("*.prefix.example.*", &backend.Endpoint{Address: "static2:443"})
+
+			endpoint, score := subject.Locate(
+				context.Background(),
+				name.Parse("w.prefix.example.x"),
+			)
+			Expect(endpoint).ShouldNot(BeNil())
+			Expect(endpoint.Address).To(Equal("static2:443"))
+			Expect(score).To(BeNumerically(">", 0))
 		})
 	})
 
@@ -64,11 +81,12 @@ var _ = Describe("Locator", func() {
 				With("nomatch", nil).
 				With("*", &backend.Endpoint{Address: "catch-all:443"})
 
-			endpoint := subject.Locate(
+			endpoint, score := subject.Locate(
 				context.Background(),
 				name.Parse("nomatch"),
 			)
 			Expect(endpoint).To(BeNil())
+			Expect(score).To(BeNumerically(">", 0))
 		})
 	})
 })

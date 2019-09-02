@@ -19,6 +19,7 @@ const DefaultPollInterval = 30 * time.Second
 type Locator struct {
 	PollInterval time.Duration
 	Loader       *ServiceLoader
+	Cache        *backend.Cache
 	Logger       *log.Logger
 
 	done     chan struct{}
@@ -26,16 +27,26 @@ type Locator struct {
 }
 
 // Locate finds the back-end HTTP server for the given server name.
-func (locator *Locator) Locate(ctx context.Context, serverName name.ServerName) *backend.Endpoint {
+//
+// It returns a score indicating the strength of the match. A value of 0 or less
+// indicates that no match was made, in which case ep is nil.
+//
+// A non-zero score can be returned with a nil endpoint, indicating that the
+// request should not be routed.
+func (locator *Locator) Locate(
+	ctx context.Context,
+	serverName name.ServerName,
+) (ep *backend.Endpoint, score int) {
 	if services, ok := locator.services.Load().([]ServiceInfo); ok {
 		for _, info := range services {
-			if info.Matcher.Match(serverName) {
-				return info.Endpoint
+			if s := info.Matcher.Match(serverName); s > score {
+				ep = info.Endpoint
+				score = s
 			}
 		}
 	}
 
-	return nil
+	return ep, score
 }
 
 // Run polls Docker for service information until Stop() is called.
@@ -45,7 +56,9 @@ func (locator *Locator) Run() {
 	}
 
 	services := locator.load()
-	locator.diff(nil, services)
+	if locator.diff(nil, services) {
+		locator.Cache.Clear()
+	}
 
 	pollInterval := locator.PollInterval
 	if pollInterval == 0 {
@@ -56,7 +69,9 @@ func (locator *Locator) Run() {
 		select {
 		case <-time.After(pollInterval):
 			s := locator.load()
-			locator.diff(services, s)
+			if locator.diff(services, s) {
+				locator.Cache.Clear()
+			}
 			services = s
 		case <-locator.done:
 			return
@@ -81,7 +96,9 @@ func (locator *Locator) load() []ServiceInfo {
 	return new
 }
 
-func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) {
+func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) bool {
+	diff := false
+
 	for _, info := range old {
 		log := true
 		for _, other := range new {
@@ -92,6 +109,7 @@ func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) {
 		}
 
 		if log {
+			diff = true
 			locator.Logger.Printf(
 				"Removed route from '%s' to '%s' (%s)",
 				info.Matcher.Pattern,
@@ -111,6 +129,7 @@ func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) {
 		}
 
 		if log {
+			diff = true
 			locator.Logger.Printf(
 				"Added route from '%s' to '%s' (%s)",
 				info.Matcher.Pattern,
@@ -119,4 +138,6 @@ func (locator *Locator) diff(old []ServiceInfo, new []ServiceInfo) {
 			)
 		}
 	}
+
+	return diff
 }

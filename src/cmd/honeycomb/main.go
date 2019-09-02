@@ -42,6 +42,8 @@ func main() {
 		logger.Fatalln(err)
 	}
 
+	cachingLocator := &backend.Cache{}
+
 	dockerLocator := &docker.Locator{
 		Loader: &docker.ServiceLoader{
 			Client: dockerClient,
@@ -50,12 +52,13 @@ func main() {
 			},
 			Logger: logger,
 		},
+		Cache:  cachingLocator,
 		Logger: logger,
 	}
 	go dockerLocator.Run()
 	defer dockerLocator.Stop()
 
-	locator := backend.AggregateLocator{
+	cachingLocator.Next = backend.AggregateLocator{
 		staticLocator,
 		dockerLocator,
 	}
@@ -119,7 +122,7 @@ func main() {
 		TLSConfig: tlsConfig,
 		Handler: &frontend.Handler{
 			Proxy: &proxy.Handler{
-				Locator: locator,
+				Locator: cachingLocator,
 				SecureHTTPProxy: &proxy.HTTPProxy{
 					Transport: secureTransport,
 				},

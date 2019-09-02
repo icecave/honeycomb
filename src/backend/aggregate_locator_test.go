@@ -29,29 +29,50 @@ var _ = Describe("AggregateLocator", func() {
 
 	Describe("Locate", func() {
 		It("locates endpoints from the inner locators", func() {
-			endpoint := subject.Locate(
+			endpoint, score := subject.Locate(
 				context.Background(),
 				name.Parse("bar"),
 			)
 			Expect(endpoint).ShouldNot(BeNil())
 			Expect(endpoint.Address).To(Equal("static2-bar:443"))
+			Expect(score).To(BeNumerically(">", 0))
 		})
 
 		It("searches the inner locators in order", func() {
-			endpoint := subject.Locate(
+			endpoint, score := subject.Locate(
 				context.Background(),
 				name.Parse("foo"),
 			)
 			Expect(endpoint).ShouldNot(BeNil())
 			Expect(endpoint.Address).To(Equal("static1-foo:443"))
+			Expect(score).To(BeNumerically(">", 0))
 		})
 
-		It("returns nil if none of the inner locators can locate the endpoint", func() {
-			endpoint := subject.Locate(
+		It("returns nil and a non-positive score if none of the inner locators can locate the endpoint", func() {
+			endpoint, score := subject.Locate(
 				context.Background(),
 				name.Parse("unknown"),
 			)
 			Expect(endpoint).To(BeNil())
+			Expect(score).To(BeNumerically("<=", 0))
+		})
+
+		It("returns the endpoint with the highest match score", func() {
+			static1 = static.Locator{}.
+				With("*.example.*", &backend.Endpoint{Address: "static1:443"})
+
+			static2 = static.Locator{}.
+				With("*.prefix.example.*", &backend.Endpoint{Address: "static2:443"})
+
+			subject = backend.AggregateLocator{static1, static2}
+
+			endpoint, score := subject.Locate(
+				context.Background(),
+				name.Parse("w.prefix.example.x"),
+			)
+			Expect(endpoint).ShouldNot(BeNil())
+			Expect(endpoint.Address).To(Equal("static2:443"))
+			Expect(score).To(BeNumerically(">", 0))
 		})
 	})
 })
