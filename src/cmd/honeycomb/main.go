@@ -27,6 +27,7 @@ import (
 	"github.com/icecave/honeycomb/src/proxyprotocol"
 	"github.com/icecave/honeycomb/src/static"
 	"go.uber.org/multierr"
+	"golang.org/x/crypto/acme"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -278,6 +279,12 @@ func acmeCertificateProvider(
 
 	if config.Certificates.ACME.CachePath != "" {
 		m.Cache = autocert.DirCache(config.Certificates.ACME.CachePath)
+	}
+
+	if config.Certificates.ACME.URL != "" {
+		m.Client = &acme.Client{
+			DirectoryURL: config.Certificates.ACME.URL,
+		}
 	}
 
 	return m, true, nil

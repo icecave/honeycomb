@@ -31,6 +31,7 @@ type acmeConfig struct {
 	Email     string
 	Domains   []string
 	CachePath string
+	URL       string
 }
 
 // GetConfigFromEnvironment creates Config object based on the shell environment.
@@ -52,6 +53,7 @@ func GetConfigFromEnvironment() *Config {
 					",",
 				),
 				CachePath: env("ACME_CACHE", ""),
+				URL:       env("ACME_URL", ""),
 			},
 			CABundles: strings.Split(
 				env("CA_PATH", "/app/etc/ca-bundle.pem,/run/secrets/ca-bundle.pem"),
