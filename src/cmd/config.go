@@ -23,7 +23,14 @@ type certificateConfig struct {
 	IssuerKey         string
 	ServerCertificate string
 	ServerKey         string
+	ACME              acmeConfig
 	CABundles         []string
+}
+
+type acmeConfig struct {
+	Email     string
+	Domains   []string
+	CachePath string
 }
 
 // GetConfigFromEnvironment creates Config object based on the shell environment.
@@ -38,6 +45,14 @@ func GetConfigFromEnvironment() *Config {
 			IssuerKey:         env("ISSUER_KEY", "honeycomb-ca.key"),
 			ServerCertificate: env("SERVER_CERT", "honeycomb-server.crt"),
 			ServerKey:         env("SERVER_KEY", "honeycomb-server.key"),
+			ACME: acmeConfig{
+				Email: env("ACME_EMAIL", ""),
+				Domains: strings.Split(
+					env("ACME_DOMAINS", ""),
+					",",
+				),
+				CachePath: env("ACME_CACHE", ""),
+			},
 			CABundles: strings.Split(
 				env("CA_PATH", "/app/etc/ca-bundle.pem,/run/secrets/ca-bundle.pem"),
 				",",

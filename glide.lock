@@ -1,5 +1,5 @@
-hash: 63cbcfc16a2200cfe1efe108d10e5abf4e93fc6e43e4a1d8aef1376e9ea31f27
-updated: 2019-08-29T10:43:31.247468+10:00
+hash: a7f38c3abd67a095d4eaa2ae04ae123e16c4c82beed14f88536720e9c58d712a
+updated: 2019-09-23T13:18:29.356726+10:00
 imports:
 - name: github.com/docker/distribution
   version: 7484e51bf6af0d3b1a849644cdaced3cfcf13617
@@ -7,7 +7,7 @@ imports:
   - digestset
   - reference
 - name: github.com/docker/docker
-  version: 456712c5b8d9d92c047f6a7d7cff270527ecac28
+  version: 9552f2b2fddeb0c2537b350f4b159ffe525d7a42
   repo: https://github.com/docker/engine.git
   subpackages:
   - api
@@ -100,6 +100,10 @@ imports:
   version: df976f2515e274675050de7b3f42545de80594fd
 - name: go.uber.org/multierr
   version: 3c4937480c32f4c13a875a1829af76c98ca3d40a
+- name: golang.org/x/crypto
+  version: b3c9a1d25cfbbbab0ff4780b71c4f54e6e92a0de
+  subpackages:
+  - acme/autocert
 - name: golang.org/x/net
   version: b60f3a92103dfd93dfcb900ec77c6d0643510868
   subpackages:
@@ -137,7 +141,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/grpc
-  version: 7150a7c70aef304650b166dfc30a1a2287cad773
+  version: 5cadcb29694b2b41a4ce8181ca0617484dd4d12d
   subpackages:
   - codes
   - status

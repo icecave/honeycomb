@@ -29,3 +29,6 @@ import:
   subpackages:
   - codes
   - status
+- package: golang.org/x/crypto
+  subpackages:
+  - acme/autocert

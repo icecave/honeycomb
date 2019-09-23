@@ -1,7 +1,6 @@
 package cert
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -27,40 +26,35 @@ type FileProvider struct {
 	cache map[string]*tls.Certificate
 }
 
-// GetCertificate attempts to fetch an existing certificate for the given
-// server name. If no such certificate exists, it generates one.
-func (p *FileProvider) GetCertificate(ctx context.Context, n name.ServerName) (*tls.Certificate, error) {
-	cert, err := p.GetExistingCertificate(ctx, n)
+// GetCertificate attempts to fetch a certificate for the given request.
+func (p *FileProvider) GetCertificate(
+	info *tls.ClientHelloInfo,
+) (*tls.Certificate, error) {
+	n, err := name.TryParse(info.ServerName)
 	if err != nil {
 		return nil, err
-	} else if cert != nil {
-		return cert, err
 	}
 
-	return nil, errors.New("file provider can not generated certificates")
-}
-
-// GetExistingCertificate attempts to fetch an existing certificate for the
-// given server name. It never generates new certificates. A non-nil error
-// indicates an error with the provider itself; otherwise, a nil certificate
-// indicates a failure to find an existing certificate.
-func (p *FileProvider) GetExistingCertificate(ctx context.Context, n name.ServerName) (*tls.Certificate, error) {
 	if cert, ok := p.findInCache(n); ok {
 		return cert, nil
 	}
 
 	for _, filename := range p.resolveFilenames(n) {
-		cert, err := p.loadCertificate(ctx, n, filename)
-		if cert != nil || err != nil {
+		cert, err := p.loadCertificate(n, filename)
+		if err != nil {
 			return cert, err
+		}
+
+		if cert != nil {
+			p.writeToCache(n, cert)
+			return cert, nil
 		}
 	}
 
-	return nil, nil
+	return nil, errors.New("no such certificate")
 }
 
 func (p *FileProvider) loadCertificate(
-	ctx context.Context,
 	n name.ServerName,
 	filename string,
 ) (*tls.Certificate, error) {
@@ -111,8 +105,6 @@ func (p *FileProvider) loadCertificate(
 			cert.Leaf.Issuer.CommonName,
 		)
 	}
-
-	p.writeToCache(n, &cert)
 
 	return &cert, nil
 }

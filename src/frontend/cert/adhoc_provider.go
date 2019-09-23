@@ -36,37 +36,28 @@ type AdhocProvider struct {
 	mutex sync.Mutex
 }
 
-// GetExistingCertificate returns the certificate for the given server name,
-// if it has already been generated. If the certificate has not been
-// generated the returned certificate and error are both nil.
-func (provider *AdhocProvider) GetExistingCertificate(
-	_ context.Context,
-	serverName name.ServerName,
-) (*tls.Certificate, error) {
-	cache, _ := provider.cache.Load().(certificateCache)
-	return provider.fetch(cache, serverName), nil
-}
-
 // GetCertificate returns the certificate for the given server name. If the
 // certificate doe not exist, it attempts to generate one.
 func (provider *AdhocProvider) GetCertificate(
-	ctx context.Context,
-	serverName name.ServerName,
+	info *tls.ClientHelloInfo,
 ) (*tls.Certificate, error) {
+	serverName, err := name.TryParse(info.ServerName)
+	if err != nil {
+		return nil, err
+	}
+
 	cache, _ := provider.cache.Load().(certificateCache)
 	if certificate := provider.fetch(cache, serverName); certificate != nil {
 		return certificate, nil
 	}
 
 	return provider.generate(
-		ctx,
 		serverName.Unicode,
 		serverName,
 	)
 }
 
 func (provider *AdhocProvider) generate(
-	ctx context.Context,
 	commonName string,
 	serverName name.ServerName,
 ) (*tls.Certificate, error) {
@@ -81,7 +72,7 @@ func (provider *AdhocProvider) generate(
 	cache = provider.purge(cache)
 
 	certificate, err := provider.Generator.Generate(
-		ctx,
+		context.Background(),
 		commonName,
 		serverName.Punycode,
 	)
