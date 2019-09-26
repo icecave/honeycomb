@@ -1,11 +1,9 @@
 package main
 
 import (
-	"context"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -20,15 +18,10 @@ import (
 	"github.com/icecave/honeycomb/src/docker"
 	"github.com/icecave/honeycomb/src/docker/health"
 	"github.com/icecave/honeycomb/src/frontend"
-	"github.com/icecave/honeycomb/src/frontend/cert"
-	"github.com/icecave/honeycomb/src/frontend/cert/generator"
-	"github.com/icecave/honeycomb/src/name"
 	"github.com/icecave/honeycomb/src/proxy"
 	"github.com/icecave/honeycomb/src/proxyprotocol"
 	"github.com/icecave/honeycomb/src/static"
 	"go.uber.org/multierr"
-	"golang.org/x/crypto/acme"
-	"golang.org/x/crypto/acme/autocert"
 )
 
 var version = "notset"
@@ -75,17 +68,14 @@ func main() {
 
 	rootCACertPool := rootCAPool(config, logger)
 
-	provider, err := certificateProvider(
+	resolver := certificateResolver(
 		config,
-		defaultCertificate,
+		defaultCertificate.PrivateKey.(*rsa.PrivateKey),
 		logger,
 	)
-	if err != nil {
-		logger.Fatalln(err)
-	}
 
 	tlsConfig := &tls.Config{
-		GetCertificate: provider.GetCertificate,
+		GetCertificate: resolver.GetCertificate,
 		Certificates:   []tls.Certificate{*defaultCertificate},
 		RootCAs:        rootCACertPool,
 	}
@@ -199,125 +189,6 @@ func loadDefaultCertificate(config *cmd.Config) (*tls.Certificate, error) {
 	}
 	cert.Certificate = append(cert.Certificate, issuer.Certificate...)
 	return &cert, err
-}
-
-func certificateProvider(
-	config *cmd.Config,
-	defaultCertificate *tls.Certificate,
-	logger *log.Logger,
-) (cert.Provider, error) {
-	providers := cert.AggregateProvider{
-		fileCertificateProvider(config, logger),
-	}
-
-	acme, ok, err := acmeCertificateProvider(config)
-	if err != nil {
-		return nil, err
-	}
-	if ok {
-		providers = append(providers, acme)
-	}
-
-	adhoc, err := adhocCertificateProvider(
-		config,
-		defaultCertificate.PrivateKey.(*rsa.PrivateKey),
-		logger,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	providers = append(providers, adhoc)
-
-	return providers, nil
-}
-
-func fileCertificateProvider(
-	config *cmd.Config,
-	logger *log.Logger,
-) cert.Provider {
-	return &cert.FileProvider{
-		BasePath: config.Certificates.BasePath,
-		Logger:   logger,
-	}
-}
-
-func acmeCertificateProvider(
-	config *cmd.Config,
-) (cert.Provider, bool, error) {
-	if config.Certificates.ACME.Email == "" {
-		return nil, false, nil
-	}
-
-	var matchers []*name.Matcher
-	for _, d := range config.Certificates.ACME.Domains {
-		m, err := name.NewMatcher(d)
-		if err != nil {
-			return nil, false, err
-		}
-
-		matchers = append(matchers, m)
-	}
-
-	m := &autocert.Manager{
-		Prompt: autocert.AcceptTOS,
-		HostPolicy: func(_ context.Context, host string) error {
-			sn, err := name.TryParse(host)
-			if err != nil {
-				return err
-			}
-
-			for _, m := range matchers {
-				if m.Match(sn) > 0 {
-					return nil
-				}
-			}
-
-			return errors.New("host not allowed")
-		},
-	}
-
-	if config.Certificates.ACME.CachePath != "" {
-		m.Cache = autocert.DirCache(config.Certificates.ACME.CachePath)
-	}
-
-	if config.Certificates.ACME.URL != "" {
-		m.Client = &acme.Client{
-			DirectoryURL: config.Certificates.ACME.URL,
-		}
-	}
-
-	return m, true, nil
-}
-
-func adhocCertificateProvider(
-	config *cmd.Config,
-	serverKey *rsa.PrivateKey,
-	logger *log.Logger,
-) (cert.Provider, error) {
-	issuer, err := tls.LoadX509KeyPair(
-		path.Join(config.Certificates.BasePath, config.Certificates.IssuerCertificate),
-		path.Join(config.Certificates.BasePath, config.Certificates.IssuerKey),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	x509Cert, err := x509.ParseCertificate(issuer.Certificate[0])
-	if err != nil {
-		return nil, err
-	}
-
-	issuer.Leaf = x509Cert
-
-	return &cert.AdhocProvider{
-		Generator: &generator.IssuerSignedGenerator{
-			IssuerCertificate: issuer.Leaf,
-			IssuerKey:         issuer.PrivateKey.(*rsa.PrivateKey),
-			ServerKey:         serverKey,
-		},
-		Logger: logger,
-	}, nil
 }
 
 func prepareTLSConfig(config *tls.Config) {

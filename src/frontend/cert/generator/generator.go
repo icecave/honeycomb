@@ -9,11 +9,15 @@ import (
 // DefaultNotBeforeOffset is the default value used for a generator's
 // NotBeforeOffset attribute when it is not specified. It is typically negative
 // to allow for some clock-drift between client and server.
-const DefaultNotBeforeOffset = -15 * time.Minute
+const DefaultNotBeforeOffset = -5 * time.Minute
 
 // DefaultNotAfterOffset is the default value used for a generator's
 // NotAfterOffset attribute when it is not specified.
-const DefaultNotAfterOffset = 24 * time.Hour
+//
+// This is deliberately a short duration to ensure that generated certificates
+// are discarded from the cache fairly often, giving the certificate resolver a
+// chance to find a "real" certificate.
+const DefaultNotAfterOffset = 10 * time.Minute
 
 // Generator creates new TLS certificates.
 type Generator interface {

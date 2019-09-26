@@ -47,11 +47,7 @@ func GetConfigFromEnvironment() *Config {
 			ServerCertificate: env("SERVER_CERT", "honeycomb-server.crt"),
 			ServerKey:         env("SERVER_KEY", "honeycomb-server.key"),
 			ACME: acmeConfig{
-				Email: env("ACME_EMAIL", ""),
-				Domains: strings.Split(
-					env("ACME_DOMAINS", ""),
-					",",
-				),
+				Email:     env("ACME_EMAIL", ""),
 				CachePath: env("ACME_CACHE", ""),
 				URL:       env("ACME_URL", ""),
 			},
