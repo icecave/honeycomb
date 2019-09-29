@@ -88,7 +88,7 @@ func fileCertificateProvider(
 	}, true
 }
 
-// fileCertificateProvider returns a cert provider that obtains certificates
+// acmeCertificateProvider returns a cert provider that obtains certificates
 // from an ACME server.
 func acmeCertificateProvider(
 	config *cmd.Config,
