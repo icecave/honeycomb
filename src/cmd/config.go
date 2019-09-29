@@ -29,7 +29,6 @@ type certificateConfig struct {
 
 type acmeConfig struct {
 	Email     string
-	Domains   []string
 	CachePath string
 	URL       string
 }
