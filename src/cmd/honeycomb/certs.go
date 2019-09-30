@@ -167,7 +167,7 @@ func adhocCertificateProvider(
 	issuer.Leaf = x509Cert
 
 	logger.Printf(
-		"Adhoc certificate provider is ENABLED, issing certificates as '%s'",
+		"Adhoc certificate provider is ENABLED, issuing certificates as '%s'",
 		issuer.Leaf.Issuer.CommonName,
 	)
 

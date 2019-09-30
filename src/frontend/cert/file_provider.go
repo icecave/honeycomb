@@ -64,10 +64,11 @@ func (p *FileProvider) GetCertificate(
 
 		if ok {
 			p.Logger.Printf(
-				"Loaded certificate for '%s' from '%s', expires at %s, issued by '%s'",
+				"Loaded certificate for '%s' from '%s', expires at %s (%s), issued by '%s'",
 				n.Unicode,
 				stem+certExtension,
 				c.Leaf.NotAfter.Format(time.RFC3339),
+				time.Until(c.Leaf.NotAfter),
 				c.Leaf.Issuer.CommonName,
 			)
 

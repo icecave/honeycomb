@@ -44,9 +44,10 @@ func (p *AdhocProvider) GetCertificate(
 	}
 
 	p.Logger.Printf(
-		"Issued certificate for '%s', expires at %s, issued by '%s'",
+		"Issued certificate for '%s', expires at %s (%s), issued by '%s'",
 		n.Unicode,
 		c.Leaf.NotAfter.Format(time.RFC3339),
+		time.Until(c.Leaf.NotAfter),
 		c.Leaf.Issuer.CommonName,
 	)
 
