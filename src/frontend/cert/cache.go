@@ -1,13 +1,17 @@
 package cert
 
 import (
+	"log"
 	"sync"
+	"time"
 
 	"github.com/icecave/honeycomb/src/name"
 )
 
 // Cache is an in-memory cache of results obtained from providers.
 type Cache struct {
+	Logger *log.Logger
+
 	m       sync.RWMutex
 	entries map[string]*cacheEntry
 }
@@ -50,6 +54,14 @@ func (c *Cache) Get(n name.ServerName, r int) (ProviderResult, bool) {
 
 		// Otherwise, we delete the stale entry.
 		delete(c.entries, n.Punycode)
+
+		c.Logger.Printf(
+			"Certificate for '%s', expires at %s (%s), issued by '%s' has been invalidated and removed from the cache.",
+			e.Result.Certificate.Leaf.Subject.CommonName,
+			e.Result.Certificate.Leaf.NotAfter.Format(time.RFC3339),
+			time.Until(e.Result.Certificate.Leaf.NotAfter),
+			e.Result.Certificate.Leaf.Issuer.CommonName,
+		)
 	}
 
 	return ProviderResult{}, false
@@ -80,10 +92,8 @@ func (c *Cache) Put(
 	}
 
 	// If there is an existing, higher-ranked entry, do not replace it.
-	if x, ok := c.entries[n.Punycode]; ok {
-		if x.Rank < r {
-			return x.Result, false
-		}
+	if x, ok := c.entries[n.Punycode]; ok && x.Rank < r {
+		return x.Result, false
 	}
 
 	c.entries[n.Punycode] = &cacheEntry{
@@ -91,6 +101,14 @@ func (c *Cache) Put(
 		Provider: p,
 		Result:   pr,
 	}
+
+	c.Logger.Printf(
+		"Certificate for '%s', expires at %s (%s), issued by '%s' has been added to the cache.",
+		pr.Certificate.Leaf.Subject.CommonName,
+		pr.Certificate.Leaf.NotAfter.Format(time.RFC3339),
+		time.Until(pr.Certificate.Leaf.NotAfter),
+		pr.Certificate.Leaf.Issuer.CommonName,
+	)
 
 	return pr, true
 }

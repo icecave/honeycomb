@@ -26,7 +26,9 @@ type Resolver struct {
 	// for unrecognized server names.
 	Unrecognized []Provider
 
-	cache Cache
+	// Cache is the in-memory cache used to store certificates to avoid
+	// re-requesting from providers on every request.
+	Cache *Cache
 }
 
 // GetCertificate returns the certificate used for a TLS request.
@@ -45,7 +47,7 @@ func (r *Resolver) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 	}
 
 	// If there's a valid entry in the cache, use it.
-	if pr, ok := r.cache.Get(n, worstRank); ok {
+	if pr, ok := r.Cache.Get(n, worstRank); ok {
 		return pr.Certificate, nil
 	}
 
@@ -62,7 +64,7 @@ func (r *Resolver) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, 
 
 		if ok {
 			if !pr.ExcludeFromCache {
-				r.cache.Put(
+				pr, _ = r.Cache.Put(
 					n,
 					rankOffset+rank,
 					p,

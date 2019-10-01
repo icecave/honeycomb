@@ -22,7 +22,11 @@ func certificateResolver(
 	serverKey *rsa.PrivateKey,
 	logger *log.Logger,
 ) *cert.Resolver {
-	r := &cert.Resolver{}
+	r := &cert.Resolver{
+		Cache: &cert.Cache{
+			Logger: logger,
+		},
+	}
 
 	if p, ok := fileCertificateProvider(config, logger); ok {
 		r.Recognized = append(r.Recognized, p)
