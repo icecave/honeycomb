@@ -25,9 +25,13 @@ func (c *Cache) Get(n name.ServerName, r int) (ProviderResult, bool) {
 		return ProviderResult{}, false
 	}
 
-	// If the entry is ranked highly enough, and is still considered valid, then
-	// go ahead and use it.
-	if e.Rank <= r && e.Provider.IsValid(e.Result) {
+	// If the entry exists but it's not ranked highly enough, ignore it.
+	if e.Rank > r {
+		return ProviderResult{}, false
+	}
+
+	// If the entry is is still valid, use it.
+	if e.Provider.IsValid(e.Result) {
 		return e.Result, true
 	}
 
