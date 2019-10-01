@@ -70,6 +70,7 @@ func main() {
 
 	resolver := certificateResolver(
 		config,
+		cachingLocator,
 		defaultCertificate.PrivateKey.(*rsa.PrivateKey),
 		logger,
 	)

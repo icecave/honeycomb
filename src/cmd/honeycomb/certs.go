@@ -1,16 +1,20 @@
 package main
 
 import (
+	"context"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"log"
 	"os"
 	"path"
+	"time"
 
+	"github.com/icecave/honeycomb/src/backend"
 	"github.com/icecave/honeycomb/src/cmd"
 	"github.com/icecave/honeycomb/src/frontend/cert"
 	"github.com/icecave/honeycomb/src/frontend/cert/generator"
+	"github.com/icecave/honeycomb/src/name"
 	"golang.org/x/crypto/acme"
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -19,10 +23,18 @@ import (
 // TLS requests.
 func certificateResolver(
 	config *cmd.Config,
+	locator backend.Locator,
 	serverKey *rsa.PrivateKey,
 	logger *log.Logger,
 ) *cert.Resolver {
 	r := &cert.Resolver{
+		IsRecognized: func(n name.ServerName) bool {
+			ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+			defer cancel()
+
+			ep, score := locator.Locate(ctx, n)
+			return score > 0 && ep != nil
+		},
 		Cache: &cert.Cache{
 			Logger: logger,
 		},
