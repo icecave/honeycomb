@@ -3,7 +3,6 @@ package cert
 import (
 	"log"
 	"sync"
-	"time"
 
 	"github.com/icecave/honeycomb/src/name"
 )
@@ -56,11 +55,8 @@ func (c *Cache) Get(n name.ServerName, r int) (ProviderResult, bool) {
 		delete(c.entries, n.Punycode)
 
 		c.Logger.Printf(
-			"Certificate for '%s', expires at %s (%s), issued by '%s' has been invalidated and removed from the cache.",
-			e.Result.Certificate.Leaf.Subject.CommonName,
-			e.Result.Certificate.Leaf.NotAfter.Format(time.RFC3339),
-			time.Until(e.Result.Certificate.Leaf.NotAfter),
-			e.Result.Certificate.Leaf.Issuer.CommonName,
+			"Certificate %s has been invalidated and removed from the cache.",
+			formatCertificate(e.Result.Certificate),
 		)
 	}
 
@@ -103,11 +99,8 @@ func (c *Cache) Put(
 	}
 
 	c.Logger.Printf(
-		"Certificate for '%s', expires at %s (%s), issued by '%s' has been added to the cache.",
-		pr.Certificate.Leaf.Subject.CommonName,
-		pr.Certificate.Leaf.NotAfter.Format(time.RFC3339),
-		time.Until(pr.Certificate.Leaf.NotAfter),
-		pr.Certificate.Leaf.Issuer.CommonName,
+		"Certificate %s has been added to the cache.",
+		formatCertificate(pr.Certificate),
 	)
 
 	return pr, true

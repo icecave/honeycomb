@@ -38,11 +38,8 @@ func (p *ACMEProvider) GetCertificate(
 	}
 
 	p.Logger.Printf(
-		"Acquired certificate for '%s' via ACME, expires at %s (%s), issued by '%s'",
-		n.Unicode,
-		c.Leaf.NotAfter.Format(time.RFC3339),
-		time.Until(c.Leaf.NotAfter),
-		c.Leaf.Issuer.CommonName,
+		"Acquired certificate %s via ACME",
+		formatCertificate(c),
 	)
 
 	return ProviderResult{
