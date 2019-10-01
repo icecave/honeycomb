@@ -64,6 +64,10 @@ func (c *Cache) Put(
 	p Provider,
 	pr ProviderResult,
 ) (ProviderResult, bool) {
+	if pr.ExcludeFromCache {
+		panic("can not store result, it is marked as uncachable")
+	}
+
 	c.m.Lock()
 	defer c.m.Unlock()
 
