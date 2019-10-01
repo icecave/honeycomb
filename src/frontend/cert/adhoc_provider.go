@@ -66,6 +66,5 @@ func (p *AdhocProvider) GetCertificate(
 // serving a certificate that is close to expiry to a client that may consider
 // the certificate to have already expired due to differences in system time.
 func (p *AdhocProvider) IsValid(r ProviderResult) bool {
-	t := time.Now().Add(-5 * time.Minute)
-	return r.Certificate.Leaf.NotAfter.Before(t)
+	return time.Until(r.Certificate.Leaf.NotAfter) > 5*time.Minute
 }
