@@ -1,19 +1,12 @@
 DOCKER_REPO ?= icecave/honeycomb
 DOCKER_TAG  ?= dev
 
-REQ += $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
-DOCKER_REQ += artifacts/cacert.pem
+GENERATED_FILES += $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
+DOCKER_BUILD_REQ += artifacts/cacert.pem
 
-GIT_HASH ?= $(shell git show -s --format=%h)
-GIT_TAG ?= $(shell git tag -l --merged $(GIT_HASH) | tail -n1)
-APP_VERSION ?= $(if $(TRAVIS_TAG),$(TRAVIS_TAG),$(if $(GIT_TAG),$(GIT_TAG),$(GIT_HASH)))
-APP_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-
--include artifacts/make/go/Makefile
--include artifacts/make/docker/Makefile
-
-DEBUG_ARGS = -v --ldflags "-X main.version=$(APP_VERSION)-debug"
-RELEASE_ARGS = -v -ldflags "-X main.version=$(APP_VERSION) -s -w" -tags release
+-include .makefiles/Makefile
+-include .makefiles/pkg/go/v1/Makefile
+-include .makefiles/pkg/docker/v1/Makefile
 
 .PHONY: docker-services
 docker-services: docker
@@ -108,5 +101,5 @@ artifacts/cacert.pem: artifacts/cabundle/gd_bundle-g2-g1.crt artifacts/cabundle/
 	( echo ""; echo "Go Daddy Intermediates"; echo "=================="; cat artifacts/cabundle/gd_bundle-g2-g1.crt ) >> "$@"
 	( echo ""; echo "Comodo PositiveSSL Intermediates"; echo "=================="; cat artifacts/cabundle/COMODO_DV_SHA-256_bundle.crt ) >> "$@"
 
-artifacts/make/%/Makefile:
-	curl -sf https://jmalloc.github.io/makefiles/fetch | bash /dev/stdin $*
+.makefiles/%:
+	@curl -sfL https://makefiles.dev/v1 | bash /dev/stdin "$@"
