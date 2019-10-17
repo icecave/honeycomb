@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.8 (2019-09-18)
+
+- **[FIXED]** Allow "overlapping" wildcard domains by always using the longest match
+- **[FIXED]** Surpress `Can not route to '<service>'` error message for unexposed services
+
 ## 0.3.7 (2019-08-15)
 
 - **[IMPROVED]** Use a more descriptive user agent when contacting the Docker API
