@@ -28,4 +28,8 @@ const (
 	// TLSInsecure indicates that the endpoint does use TLS, but that its
 	// certificate details should not be verified.
 	TLSInsecure
+
+	// TLSDisabledH2C indicates that the endpoint uses H2C, the non-TLS variant
+	// of HTTP2.
+	TLSDisabledH2C
 )

@@ -70,6 +70,8 @@ func (inspector *ServiceInspector) tlsMode(
 			return backend.TLSDisabled, nil
 		case "insecure":
 			return backend.TLSInsecure, nil
+		case "h2c":
+			return backend.TLSDisabledH2C, nil
 		default:
 			return backend.TLSDisabled, fmt.Errorf(
 				"invalid '%s' label (%s), expected 'enabled', 'disabled' or 'insecure'",

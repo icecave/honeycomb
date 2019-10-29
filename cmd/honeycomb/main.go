@@ -12,6 +12,8 @@ import (
 	"os"
 	"path"
 
+	"golang.org/x/net/http2"
+
 	"github.com/docker/docker/client"
 	"github.com/icecave/honeycomb/backend"
 	"github.com/icecave/honeycomb/cmd"
@@ -115,6 +117,13 @@ func main() {
 		},
 	}
 
+	h2cTransport := &http2.Transport{
+		AllowHTTP: true,
+		DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
+			return net.Dial(network, addr)
+		},
+	}
+
 	prepareTLSConfig(tlsConfig)
 
 	server := http.Server{
@@ -128,6 +137,9 @@ func main() {
 				},
 				InsecureHTTPProxy: &proxy.HTTPProxy{
 					Transport: insecureTransport,
+				},
+				H2CProxy: &proxy.HTTPProxy{
+					Transport: h2cTransport,
 				},
 				SecureWebSocketProxy: &proxy.WebSocketProxy{
 					Dialer: &proxy.BasicWebSocketDialer{

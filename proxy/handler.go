@@ -17,6 +17,7 @@ type Handler struct {
 	Locator                backend.Locator
 	SecureHTTPProxy        Proxy
 	InsecureHTTPProxy      Proxy
+	H2CProxy               Proxy
 	SecureWebSocketProxy   Proxy
 	InsecureWebSocketProxy Proxy
 	StatusPageWriter       statuspage.Writer
@@ -146,6 +147,14 @@ func (handler *Handler) prepareUpstreamHeaders(request *http.Request, isWebSocke
 
 // selectProxy returns the proxy used to connect to the given endpoint.
 func (handler *Handler) selectProxy(endpoint *backend.Endpoint, isWebSocket bool) Proxy {
+	if endpoint.TLSMode == backend.TLSDisabledH2C {
+		if isWebSocket {
+			return handler.InsecureWebSocketProxy
+		}
+
+		return handler.H2CProxy
+	}
+
 	if endpoint.TLSMode == backend.TLSInsecure {
 		if isWebSocket {
 			return handler.InsecureWebSocketProxy
