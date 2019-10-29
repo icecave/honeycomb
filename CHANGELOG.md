@@ -1,5 +1,9 @@
 # Changelog
 
+## Next Release
+
+- **[NEW]** Added support for H2C (non-TLS HTTP/2) upstream endpoints (requires `honeycomb.tls=h2c` label)
+
 ## 0.3.8 (2019-09-18)
 
 - **[FIXED]** Allow "overlapping" wildcard domains by always using the longest match
