@@ -1,6 +1,6 @@
 # Changelog
 
-## Next Release
+## 0.3.9 (2020-01-28)
 
 - **[NEW]** Added support for H2C (non-TLS HTTP/2) upstream endpoints (requires `honeycomb.tls=h2c` label)
 
