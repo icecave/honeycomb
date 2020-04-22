@@ -9,7 +9,7 @@ after_script: bash <(curl -s https://codecov.io/bash)
 before_deploy: docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
 deploy:
   provider: script
-  script: DOCKER_TAG="$TRAVIS_TAG" make docker-push
+  script: DOCKER_TAGS="$TRAVIS_TAG" make docker-push
   skip_cleanup: true
   on:
     go: '1.14'
