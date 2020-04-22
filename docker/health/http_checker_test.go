@@ -122,7 +122,7 @@ var _ = Describe("HTTPChecker", func() {
 		It("returns an unhealthy status when the check is too slow", func() {
 			expected := health.Status{
 				IsHealthy: false,
-				Message:   fmt.Sprintf("Get %s/.honeycomb/health-check: net/http: request canceled (Client.Timeout exceeded while awaiting headers)", slowServerURL),
+				Message:   fmt.Sprintf(`Get "%s/.honeycomb/health-check": context deadline exceeded (Client.Timeout exceeded while awaiting headers)`, slowServerURL),
 			}
 
 			Expect(slowSubject.Check()).To(Equal(expected))
