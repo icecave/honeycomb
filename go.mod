@@ -1,6 +1,6 @@
 module github.com/icecave/honeycomb
 
-go 1.13
+go 1.14
 
 replace github.com/docker/docker => github.com/docker/engine v1.4.2-0.20191007211215-3e077fc8667a
 

@@ -30,9 +30,12 @@ docker-services: docker
 		--label 'honeycomb.match=echo.*' \
 		jmalloc/echo-server
 
-MINIFY := $(GOPATH)/bin/minify
+MINIFY := artifacts/minify/bin/minify
 $(MINIFY):
-	go get -u github.com/tdewolff/minify/cmd/minify
+	rm -rf "artifacts/minify/repo"
+	git clone https://github.com/tdewolff/minify.git "artifacts/minify/repo"
+	mkdir -p "$(@D)"
+	cd artifacts/minify/repo/cmd/minify && GOBIN="$(shell pwd)/$(@D)" go install -ldflags "-s -w" -trimpath
 
 artifacts/assets/%.tmp: res/assets/% | $(MINIFY)
 	$(MINIFY) -o "$@" "$<" || cp "$<" "$@"
