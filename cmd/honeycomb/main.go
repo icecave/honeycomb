@@ -124,7 +124,7 @@ func main() {
 		},
 	}
 
-	prepareTLSConfig(tlsConfig)
+	prepareTLSConfig(config, tlsConfig)
 
 	server := http.Server{
 		Addr:      ":" + config.Port,
@@ -253,11 +253,13 @@ func secondaryCertificateProvider(
 	}, nil
 }
 
-func prepareTLSConfig(config *tls.Config) {
-	config.NextProtos = []string{"h2"}
-	config.MinVersion = tls.VersionTLS10
-	config.PreferServerCipherSuites = true
-	config.CurvePreferences = []tls.CurveID{tls.CurveP256, tls.CurveP384, tls.CurveP521}
+func prepareTLSConfig(config *cmd.Config, tlsConfig *tls.Config) {
+	tlsConfig.NextProtos = []string{"h2"}
+	tlsConfig.MinVersion = config.MinTLSVersion
+	tlsConfig.MaxVersion = config.MaxTLSVersion
+	tlsConfig.CipherSuites = config.CipherSuite
+	tlsConfig.PreferServerCipherSuites = true
+	tlsConfig.CurvePreferences = []tls.CurveID{tls.CurveP256, tls.CurveP384, tls.CurveP521}
 }
 
 func rootCAPool(
