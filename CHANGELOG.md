@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.10 (2020-08-19)
+
+- **[NEW]** Add `TLS_[MIN|MAX]_VERSION` environment variables for setting allowed TLS version (thanks [@koshatul])
+- **[NEW]** Add `TLS_CIPHER_SUITE` environment variable for setting allowed TLS cipher suites (thanks [@koshatul])
+
 ## 0.3.9 (2020-01-28)
 
 - **[NEW]** Added support for H2C (non-TLS HTTP/2) upstream endpoints (requires `honeycomb.tls=h2c` label)
