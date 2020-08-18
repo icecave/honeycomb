@@ -30,16 +30,24 @@ docker-services: docker
 		--label 'honeycomb.match=echo.*' \
 		jmalloc/echo-server
 
+.PHONY: docker-update
+docker-update: docker
+	docker service update --image icecave/honeycomb:dev --force honeycomb
+
 MINIFY := artifacts/minify/bin/minify
 $(MINIFY):
-	rm -rf "artifacts/minify/repo"
-	git clone https://github.com/tdewolff/minify.git "artifacts/minify/repo"
-	mkdir -p "$(@D)"
-	cd artifacts/minify/repo/cmd/minify && GOBIN="$(shell pwd)/$(@D)" go install -ldflags "-s -w" -trimpath
+	-@mkdir -p "$(@D)"
+	curl -sSL -# "https://github.com/tdewolff/minify/releases/download/v2.8.0/minify_$(shell go env GOHOSTOS)_$(shell go env GOHOSTARCH).tar.gz" | tar xvfz - -C "$(@D)" "minify"
+
+artifacts/assets/%.txt.tmp: res/assets/%.txt
+	-@mkdir -p "$(@D)"
+	cp "$(<)" "$(@)"
 
 artifacts/assets/%.tmp: res/assets/% | $(MINIFY)
+	-@mkdir -p "$(@D)"
 	$(MINIFY) -o "$@" "$<" || cp "$<" "$@"
 
+.DELETE_ON_ERROR: artifacts/assets/%.go
 artifacts/assets/%.go: artifacts/assets/%.tmp
 	@mkdir -p "$(@D)"
 	@echo "package assets" > "$@"
@@ -90,13 +98,9 @@ artifacts/cabundle/gd_bundle-g2-g1.crt:
 	@mkdir -p "$(@D)"
 	curl -L -o "$@" https://certs.godaddy.com/repository/gd_bundle-g2-g1.crt
 
-artifacts/cabundle/comodo_dv_sha-256_bundle.crt.zip:
-	@mkdir -p "$(@D)"
-	curl -L -o "$@" https://namecheap.simplekb.com/SiteContents/2-7C22D5236A4543EB827F3BD8936E153E/media/COMODO_DV_SHA-256_bundle.crt.zip
-
-artifacts/cabundle/COMODO_DV_SHA-256_bundle.crt: artifacts/cabundle/comodo_dv_sha-256_bundle.crt.zip
-	unzip -o artifacts/cabundle/comodo_dv_sha-256_bundle.crt.zip -d "$(@D)"
-	touch -c "$@"
+artifacts/cabundle/COMODO_DV_SHA-256_bundle.crt:
+	-@mkdir -p "$(@D)"
+	curl -SL -o "$(@)" "https://support.comodo.com/index.php?/Knowledgebase/Article/GetAttachment/1099/1226060"
 
 artifacts/cacert.pem: artifacts/cabundle/gd_bundle-g2-g1.crt artifacts/cabundle/COMODO_DV_SHA-256_bundle.crt
 	curl -L -o "$@.orig" http://curl.haxx.se/ca/cacert.pem
