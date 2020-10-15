@@ -13,12 +13,13 @@ require (
 	github.com/docker/go-connections v0.4.1-0.20180821093606-97c2040d34df // indirect
 	github.com/docker/go-units v0.3.3 // indirect
 	github.com/dustin/go-humanize v1.0.0
+	github.com/go-redis/redis/v8 v8.3.1
 	github.com/gogo/protobuf v1.2.2-0.20190306082329-c5a62797aee0 // indirect
 	github.com/golang/gddo v0.0.0-20181116215533-9bd4a3295021
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/onsi/ginkgo v1.9.1-0.20190828165658-66915d68818e
-	github.com/onsi/gomega v1.7.0
+	github.com/onsi/ginkgo v1.14.1
+	github.com/onsi/gomega v1.10.2
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.2-0.20190306222905-243ea084a444 // indirect
 	github.com/pires/go-proxyproto v0.0.0-20190111085350-4d51b51e3bfc
@@ -26,8 +27,8 @@ require (
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/multierr v1.1.0
-	golang.org/x/net v0.0.0-20190311183353-d8887717615a
+	golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
-	google.golang.org/grpc v1.22.2 // indirect
+	google.golang.org/grpc v1.32.0 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )

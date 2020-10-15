@@ -17,7 +17,7 @@ const DefaultTimeout = 5 * time.Second
 type ProviderAdaptor struct {
 	// PrimaryProvider is the certificate provider used to create certificates
 	// for "normal" recognized server names.
-	PrimaryProvider Provider
+	PrimaryProvider []Provider
 
 	// SecondaryProvider is used to provide default or "fallback" certificates
 	// so that requests may be served even when the server name is unrecognized.
@@ -48,18 +48,20 @@ func (adaptor *ProviderAdaptor) GetCertificate(
 		return nil, nil
 	}
 
-	// Next, look for an existing certificate from the primary provider. If such
-	// a certificate is available, it doesn't matter if the server name is
-	// recognized or not ...
-	certificate, err := adaptor.PrimaryProvider.GetExistingCertificate(ctx, serverName)
-	if certificate != nil || err != nil {
-		return certificate, err
-	}
+	for _, provider := range adaptor.PrimaryProvider {
+		// Next, look for an existing certificate from the primary provider. If such
+		// a certificate is available, it doesn't matter if the server name is
+		// recognized or not ...
+		certificate, err := provider.GetExistingCertificate(ctx, serverName)
+		if certificate != nil || err != nil {
+			return certificate, err
+		}
 
-	// If the server name is recognized, use the primary provider to get a new
-	// certificate for the server name ...
-	if adaptor.IsRecognised != nil && adaptor.IsRecognised(ctx, serverName) {
-		return adaptor.PrimaryProvider.GetCertificate(ctx, serverName)
+		// If the server name is recognized, use the primary provider to get a new
+		// certificate for the server name ...
+		if adaptor.IsRecognised != nil && adaptor.IsRecognised(ctx, serverName) {
+			return provider.GetCertificate(ctx, serverName)
+		}
 	}
 
 	// Finally, fallback to the secondary provider ...

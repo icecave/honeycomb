@@ -22,6 +22,9 @@ type Config struct {
 }
 
 type certificateConfig struct {
+	RedisAddress      string
+	RedisPassword     string
+	RedisCacheExpire  time.Duration
 	BasePath          string
 	IssuerCertificate string
 	IssuerKey         string
@@ -37,6 +40,9 @@ func GetConfigFromEnvironment() *Config {
 		InsecurePort:       env("REDIRECT_PORT", "8080"),
 		DockerPollInterval: time.Duration(envInt("DOCKER_POLL_INTERVAL", 0)) * time.Second,
 		Certificates: certificateConfig{
+			RedisAddress:      env("REDIS_ADDR", ""),
+			RedisPassword:     env("REDIS_PASSWORD", ""),
+			RedisCacheExpire:  envDuration("REDIS_CACHE_EXPIRY", time.Minute),
 			BasePath:          env("CERTIFICATE_PATH", "/run/secrets/"),
 			IssuerCertificate: env("ISSUER_CERT", "honeycomb-ca.crt"),
 			IssuerKey:         env("ISSUER_KEY", "honeycomb-ca.key"),
