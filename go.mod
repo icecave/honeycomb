@@ -7,6 +7,7 @@ replace github.com/docker/docker => github.com/docker/engine v1.4.2-0.2019100721
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Microsoft/go-winio v0.4.13-0.20190312221528-4de24ed3e8c5 // indirect
+	github.com/alicebob/miniredis/v2 v2.13.3
 	github.com/containerd/containerd v1.3.0 // indirect
 	github.com/docker/distribution v2.6.0-rc.1.0.20171011171712-7484e51bf6af+incompatible
 	github.com/docker/docker v0.0.0-00010101000000-000000000000

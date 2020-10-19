@@ -16,11 +16,17 @@ import (
 // RedisProvider a certificate provider that reads certificates from a loader.
 type RedisProvider struct {
 	Logger   *log.Logger
-	Client   *redis.Client
+	Client   RedisClient
 	CacheAge time.Duration
 
 	mutex sync.RWMutex
 	cache map[string]*redisCacheItem
+}
+
+// RedisClient interface with the functions used by this module on the redis connection
+// allows for mocking during testing and ensures the redis.Client provides expected methods.
+type RedisClient interface {
+	HGetAll(ctx context.Context, key string) *redis.StringStringMapCmd
 }
 
 type redisCacheItem struct {
@@ -86,6 +92,8 @@ func (p *RedisProvider) GetExistingCertificate(ctx context.Context, n name.Serve
 
 func (p *RedisProvider) getRedisCertificate(ctx context.Context, n name.ServerName) (*tls.Certificate, error) {
 	r, err := p.Client.HGetAll(ctx, certificateRedisKey(n.Unicode)).Result()
+	log.Printf("redis result: %q", r)
+	log.Printf("redis error: %q", err)
 	if err != nil {
 		// p.Logger.Printf("failed to retrieve certificate for %s", certificateRedisKey(n.Unicode))
 		// p.Logger.Printf("redis error: %s", err)
