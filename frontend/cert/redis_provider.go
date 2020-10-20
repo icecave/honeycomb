@@ -34,6 +34,9 @@ type redisCacheItem struct {
 	LastSeen    time.Time
 }
 
+// errRedisCertNotFound is returned when the certificate is not found or not correctly formed in redis.
+var errRedisCertNotFound = errors.New("certificate not found")
+
 // GetCertificate attempts to fetch an existing certificate for the given
 // server name. If no such certificate exists, it generates one.
 func (p *RedisProvider) GetCertificate(ctx context.Context, n name.ServerName) (*tls.Certificate, error) {
@@ -44,7 +47,7 @@ func (p *RedisProvider) GetCertificate(ctx context.Context, n name.ServerName) (
 		return cert, err
 	}
 
-	return nil, errors.New("redis provider can not generate certificates")
+	return nil, fmt.Errorf("redis %w", ErrProviderGenerateUnsupported)
 }
 
 func certificateRedisKey(key string) (o string) {
@@ -83,6 +86,7 @@ func (p *RedisProvider) GetExistingCertificate(ctx context.Context, n name.Serve
 	// fail through to getting it from the cache.
 	if cert, ok := p.findInCache(n); ok {
 		p.Logger.Printf("expired but falling through to cache for %s", n.Unicode)
+
 		return cert, nil
 	}
 
@@ -92,8 +96,6 @@ func (p *RedisProvider) GetExistingCertificate(ctx context.Context, n name.Serve
 
 func (p *RedisProvider) getRedisCertificate(ctx context.Context, n name.ServerName) (*tls.Certificate, error) {
 	r, err := p.Client.HGetAll(ctx, certificateRedisKey(n.Unicode)).Result()
-	log.Printf("redis result: %q", r)
-	log.Printf("redis error: %q", err)
 	if err != nil {
 		// p.Logger.Printf("failed to retrieve certificate for %s", certificateRedisKey(n.Unicode))
 		// p.Logger.Printf("redis error: %s", err)
@@ -103,11 +105,12 @@ func (p *RedisProvider) getRedisCertificate(ctx context.Context, n name.ServerNa
 	if cr, ck, ok := certAndKeyFromMap(r); ok {
 		if cert, err := tls.X509KeyPair([]byte(cr), []byte(ck)); err == nil {
 			p.writeToCache(n, &cert)
+
 			return &cert, nil
 		}
 	}
 
-	return nil, errors.New("certificate not found")
+	return nil, errRedisCertNotFound
 }
 
 // // FlushOldCacheItems will flush any entries from the cache that are older than the specified duration.
@@ -152,16 +155,16 @@ func (p *RedisProvider) findInCache(
 	return nil, false
 }
 
-func (p *RedisProvider) deleteFromCache(
-	n name.ServerName,
-) (*tls.Certificate, bool) {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
+// func (p *RedisProvider) deleteFromCache(
+// 	n name.ServerName,
+// ) (*tls.Certificate, bool) {
+// 	p.mutex.RLock()
+// 	defer p.mutex.RUnlock()
 
-	item, ok := p.cache[n.Unicode]
+// 	item, ok := p.cache[n.Unicode]
 
-	return item.Certificate, ok
-}
+// 	return item.Certificate, ok
+// }
 
 func (p *RedisProvider) writeToCache(
 	n name.ServerName,

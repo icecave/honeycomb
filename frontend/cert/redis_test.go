@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	realDomainCert = `-----BEGIN CERTIFICATE-----
+	redisRealDomainCert = `-----BEGIN CERTIFICATE-----
 MIIB5TCCAYygAwIBAgIUSM0nqePsmshbPMgGcbIK95ZpmlMwCgYIKoZIzj0EAwIw
 JTEjMCEGA1UEAxMaVGVzdCBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwIBcNMjAxMDE0
 MjMyMjAwWhgPMjA1MDEwMDcyMzIyMDBaMBkxFzAVBgNVBAMTDnJlYWxkb21haW4u
@@ -40,7 +40,7 @@ HQYDVR0OBBYEFM2NslmTH/O+d4uJXsnWtif+9n5JMAoGCCqGSM49BAMCA0cAMEQC
 IBUp4kpKBqi9TdUaE4HotSUMx2k+hAqeh/wJS9xWRoeJAiAV4BURvEie4BNFiyKE
 oXaYPOJkQqj8flTqUmhLa62pFg==
 -----END CERTIFICATE-----`
-	realDomainKey = `-----BEGIN EC PRIVATE KEY-----
+	redisRealDomainKey = `-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIHAt6S1cFRUvCtAA9OZ9M55IRK+AjByzo5tk/qTgR+6ioAoGCCqGSM49
 AwEHoUQDQgAEItKG2eC7dVixw5zSawF1QqVsbrg4wIrHzmiXKFCdnjxoFjOHggRZ
 bIbWIy99UBlQdbOuer/vi3o/L36lr9GVRw==
@@ -59,7 +59,7 @@ var _ = Describe("RedisProvider", func() {
 			Addr: mockRedis.Addr(),
 		})
 		defer rdb.Close()
-		rdb.HSet(context.Background(), "ssl:realdomain.com", map[string]interface{}{"certificate": realDomainCert, "key": realDomainKey})
+		rdb.HSet(context.Background(), "ssl:realdomain.com", map[string]interface{}{"certificate": redisRealDomainCert, "key": redisRealDomainKey})
 	})
 
 	DescribeTable(
