@@ -124,10 +124,8 @@ var _ = Describe("MultiProvider", func() {
 		"GetCertificate",
 		func(n name.ServerName, tt multiTestType) {
 			p := &cert.MultiProvider{
-				Providers: []cert.Provider{
-					&mockPrimaryProvider{},
-					&mockSecondaryProvider{},
-				},
+				&mockPrimaryProvider{},
+				&mockSecondaryProvider{},
 			}
 			c, err := p.GetCertificate(context.Background(), n)
 			switch tt {
@@ -149,10 +147,8 @@ var _ = Describe("MultiProvider", func() {
 		"GetExistingCertificate",
 		func(n name.ServerName, tt multiTestType) {
 			p := &cert.MultiProvider{
-				Providers: []cert.Provider{
-					&mockPrimaryProvider{},
-					&mockSecondaryProvider{},
-				},
+				&mockPrimaryProvider{},
+				&mockSecondaryProvider{},
 			}
 			c, err := p.GetExistingCertificate(context.Background(), n)
 			switch tt {

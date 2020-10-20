@@ -82,10 +82,8 @@ func main() {
 
 	providerAdaptor := &cert.ProviderAdaptor{
 		PrimaryProvider: &cert.MultiProvider{
-			Providers: []cert.Provider{
-				primaryFileCertificateProvider(config, logger),
-				primaryRedisCertificateProvider(config, logger),
-			},
+			primaryFileCertificateProvider(config, logger),
+			primaryRedisCertificateProvider(config, logger),
 		},
 		SecondaryProvider: secondaryCertProvider,
 	}
