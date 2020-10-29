@@ -36,16 +36,12 @@ type minioCacheItem struct {
 // errMinioCertNotFound is returned when the certificate is not found or not correctly formed in minio.
 var errMinioCertNotFound = errors.New("certificate not found")
 
-func minioCertificate(key string) (o string) {
-	return fmt.Sprintf("%s.crt", key)
-}
-
-func minioKey(key string) (o string) {
-	return fmt.Sprintf("%s.key", key)
-}
-
 // NewMinioProvider returns a MinioProvider preconfigured and setup for use as a Provider.
-func NewMinioProvider(logger *log.Logger, endpoint, region, bucketName, accessKeyID, secretAccessKey string, useSSL bool) (Provider, error) {
+func NewMinioProvider(
+	logger *log.Logger,
+	endpoint, region, bucketName, accessKeyID, secretAccessKey string,
+	useSSL bool,
+) (Provider, error) {
 	c, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 		Secure: useSSL,
@@ -102,6 +98,7 @@ func (p *MinioProvider) GetExistingCertificate(ctx context.Context, n name.Serve
 		// cached certificate until it's replaced.
 		if cert, err := p.getMinioCertificate(ctx, objectName); err == nil {
 			p.writeToCache(n, cert)
+
 			return cert, nil
 		}
 	}
@@ -117,15 +114,26 @@ func (p *MinioProvider) GetExistingCertificate(ctx context.Context, n name.Serve
 	return nil, nil
 }
 
-func (p *MinioProvider) getMinioCertificate(ctx context.Context, objectName string) (*tls.Certificate, error) {
-	var certObj, keyObj *minio.Object
-	var err error
+func (p *MinioProvider) getMinioObject(ctx context.Context, objectName string) (*minio.Object, error) {
+	return p.Client.GetObject(
+		ctx,
+		p.BucketName,
+		fmt.Sprintf("%s.crt", objectName),
+		minio.GetObjectOptions{},
+	)
+}
 
-	if certObj, err = p.Client.GetObject(ctx, p.BucketName, fmt.Sprintf("%s.crt", objectName), minio.GetObjectOptions{}); err != nil {
+func (p *MinioProvider) getMinioCertificate(ctx context.Context, objectName string) (*tls.Certificate, error) {
+	var (
+		certObj, keyObj *minio.Object
+		err             error
+	)
+
+	if certObj, err = p.getMinioObject(ctx, fmt.Sprintf("%s.crt", objectName)); err != nil {
 		return nil, err
 	}
 
-	if keyObj, err = p.Client.GetObject(ctx, p.BucketName, fmt.Sprintf("%s.key", objectName), minio.GetObjectOptions{}); err != nil {
+	if keyObj, err = p.getMinioObject(ctx, fmt.Sprintf("%s.key", objectName)); err != nil {
 		return nil, err
 	}
 

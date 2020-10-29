@@ -44,6 +44,7 @@ func (provider *AdhocProvider) GetExistingCertificate(
 	serverName name.ServerName,
 ) (*tls.Certificate, error) {
 	cache, _ := provider.cache.Load().(certificateCache)
+
 	return provider.fetch(cache, serverName), nil
 }
 
