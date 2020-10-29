@@ -34,6 +34,25 @@ docker-services: docker
 docker-update: docker
 	docker service update --image icecave/honeycomb:dev --force honeycomb
 
+.PHONY: docker-minio
+docker-minio: docker-services
+	-@mkdir -p artifacts/minio/data
+	-docker service rm minio
+	docker service create \
+		--name minio \
+		--constraint "node.role==manager" \
+		--mount "type=bind,target=/data,source=$(shell pwd)/artifacts/minio/data" \
+		--network public \
+		--env "MINIO_ACCESS_KEY=TESTACCESSKEY" \
+		--env "MINIO_SECRET_KEY=TESTSECRETKEY" \
+		--publish "9000:9000/tcp" \
+		minio/minio:latest \
+		server /data
+	docker service update \
+		--env-add "MINIO_ACCESS_KEY=TESTACCESSKEY" \
+		--env-add "MINIO_SECRET_KEY=TESTSECRETKEY" \
+		honeycomb
+
 MINIFY := artifacts/minify/bin/minify
 $(MINIFY):
 	-@mkdir -p "$(@D)"

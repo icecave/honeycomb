@@ -79,8 +79,14 @@ func main() {
 		logger.Fatalln(err)
 	}
 
+	primaryCertProvider := cert.MultiProvider{
+		primaryFileCertificateProvider(config, logger),
+	}
+	if config.Certificates.Minio.AccessKeyID != "" {
+		primaryCertProvider = append(primaryCertProvider, primaryMinioCertificateProvider(config, logger))
+	}
 	providerAdaptor := &cert.ProviderAdaptor{
-		PrimaryProvider:   primaryCertificateProvider(config, logger),
+		PrimaryProvider:   primaryCertProvider,
 		SecondaryProvider: secondaryCertProvider,
 	}
 
@@ -213,7 +219,27 @@ func loadDefaultCertificate(config *cmd.Config) (*tls.Certificate, error) {
 	return &cert, err
 }
 
-func primaryCertificateProvider(
+func primaryMinioCertificateProvider(
+	config *cmd.Config,
+	logger *log.Logger,
+) cert.Provider {
+	mc, err := cert.NewMinioProvider(
+		logger,
+		config.Certificates.Minio.Endpoint,
+		config.Certificates.Minio.Region,
+		config.Certificates.Minio.BucketName,
+		config.Certificates.Minio.AccessKeyID,
+		config.Certificates.Minio.SecretAccessKey,
+		config.Certificates.Minio.SSL,
+	)
+	if err != nil {
+		logger.Fatalln(err)
+	}
+
+	return mc
+}
+
+func primaryFileCertificateProvider(
 	config *cmd.Config,
 	logger *log.Logger,
 ) cert.Provider {
