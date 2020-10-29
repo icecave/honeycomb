@@ -28,6 +28,16 @@ type certificateConfig struct {
 	ServerCertificate string
 	ServerKey         string
 	CABundles         []string
+	Minio             minioStoreConfig
+}
+
+type minioStoreConfig struct {
+	Endpoint        string
+	Region          string
+	BucketName      string
+	AccessKeyID     string
+	SecretAccessKey string
+	SSL             bool
 }
 
 // GetConfigFromEnvironment creates Config object based on the shell environment.
@@ -46,6 +56,14 @@ func GetConfigFromEnvironment() *Config {
 				env("CA_PATH", "/app/etc/ca-bundle.pem,/run/secrets/ca-bundle.pem"),
 				",",
 			),
+			Minio: minioStoreConfig{
+				Endpoint:        env("MINIO_ENDPOINT", "minio:9000"),
+				Region:          env("MINIO_REGION", "us-east-1"),
+				BucketName:      env("MINIO_BUCKETNAME", "honeycomb"),
+				AccessKeyID:     env("MINIO_ACCESS_KEY", ""),
+				SecretAccessKey: env("MINIO_SECRET_KEY", ""),
+				SSL:             envBool("MINIO_SSL", false),
+			},
 		},
 		ProxyProtocol: envBool("PROXY_PROTOCOL", false),
 		CheckTimeout:  envDuration("CHECK_TIMEOUT", 500*time.Millisecond),

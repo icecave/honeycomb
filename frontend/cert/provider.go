@@ -3,6 +3,7 @@ package cert
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 
 	"github.com/icecave/honeycomb/name"
 )
@@ -19,3 +20,6 @@ type Provider interface {
 	// indicates a failure to find an existing certificate.
 	GetExistingCertificate(context.Context, name.ServerName) (*tls.Certificate, error)
 }
+
+// ErrProviderGenerateUnsupported is returned when providers do not generate new certificates.
+var ErrProviderGenerateUnsupported = errors.New("provider can not generate certificates")

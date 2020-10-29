@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -15,8 +15,10 @@ import (
 	"github.com/icecave/honeycomb/name"
 )
 
-const certExtension = ".crt"
-const keyExtension = ".key"
+const (
+	certExtension = ".crt"
+	keyExtension  = ".key"
+)
 
 // FileProvider a certificate provider that reads certificates from a loader.
 type FileProvider struct {
@@ -37,7 +39,7 @@ func (p *FileProvider) GetCertificate(ctx context.Context, n name.ServerName) (*
 		return cert, err
 	}
 
-	return nil, errors.New("file provider can not generated certificates")
+	return nil, fmt.Errorf("file %w", ErrProviderGenerateUnsupported)
 }
 
 // GetExistingCertificate attempts to fetch an existing certificate for the
@@ -50,7 +52,7 @@ func (p *FileProvider) GetExistingCertificate(ctx context.Context, n name.Server
 	}
 
 	for _, filename := range p.resolveFilenames(n) {
-		cert, err := p.loadCertificate(ctx, n, filename)
+		cert, err := p.loadCertificate(n, filename)
 		if cert != nil || err != nil {
 			return cert, err
 		}
@@ -60,7 +62,6 @@ func (p *FileProvider) GetExistingCertificate(ctx context.Context, n name.Server
 }
 
 func (p *FileProvider) loadCertificate(
-	ctx context.Context,
 	n name.ServerName,
 	filename string,
 ) (*tls.Certificate, error) {

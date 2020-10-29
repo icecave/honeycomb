@@ -72,5 +72,6 @@ func (adaptor *ProviderAdaptor) context() (context.Context, context.CancelFunc) 
 	if timeout == 0 {
 		timeout = DefaultTimeout
 	}
+
 	return context.WithTimeout(context.Background(), timeout)
 }
