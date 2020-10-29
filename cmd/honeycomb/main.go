@@ -80,11 +80,14 @@ func main() {
 		logger.Fatalln(err)
 	}
 
+	primaryCertProvider := cert.MultiProvider{
+		primaryFileCertificateProvider(config, logger),
+	}
+	if config.Certificates.RedisAddress != "" {
+		primaryCertProvider = append(primaryCertProvider, primaryRedisCertificateProvider(config, logger))
+	}
 	providerAdaptor := &cert.ProviderAdaptor{
-		PrimaryProvider: &cert.MultiProvider{
-			primaryFileCertificateProvider(config, logger),
-			primaryRedisCertificateProvider(config, logger),
-		},
+		PrimaryProvider:   primaryCertProvider,
 		SecondaryProvider: secondaryCertProvider,
 	}
 
