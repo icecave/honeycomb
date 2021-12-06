@@ -1,6 +1,9 @@
 DOCKER_REPO ?= icecave/honeycomb
 DOCKER_TAG  ?= dev
 
+DOCKER_PLATFORMS += linux/amd64
+DOCKER_PLATFORMS += linux/arm64
+
 GENERATED_FILES += $(patsubst res/assets/%,artifacts/assets/%.go, $(wildcard res/assets/*))
 DOCKER_BUILD_REQ += artifacts/cacert.pem
 
@@ -34,18 +37,9 @@ docker-services: docker
 docker-update: docker
 	docker service update --image icecave/honeycomb:dev --force honeycomb
 
-MINIFY := artifacts/minify/bin/minify
-$(MINIFY):
-	-@mkdir -p "$(@D)"
-	curl -sSL -# "https://github.com/tdewolff/minify/releases/download/v2.8.0/minify_$(shell go env GOHOSTOS)_$(shell go env GOHOSTARCH).tar.gz" | tar xvfz - -C "$(@D)" "minify"
-
-artifacts/assets/%.txt.tmp: res/assets/%.txt
+artifacts/assets/%.tmp: res/assets/%
 	-@mkdir -p "$(@D)"
 	cp "$(<)" "$(@)"
-
-artifacts/assets/%.tmp: res/assets/% | $(MINIFY)
-	-@mkdir -p "$(@D)"
-	$(MINIFY) -o "$@" "$<" || cp "$<" "$@"
 
 .DELETE_ON_ERROR: artifacts/assets/%.go
 artifacts/assets/%.go: artifacts/assets/%.tmp
