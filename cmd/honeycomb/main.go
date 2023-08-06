@@ -15,6 +15,7 @@ import (
 	"golang.org/x/net/http2"
 
 	"github.com/docker/docker/client"
+	"github.com/go-redis/redis/v8"
 	"github.com/icecave/honeycomb/backend"
 	"github.com/icecave/honeycomb/cmd"
 	"github.com/icecave/honeycomb/docker"
@@ -79,8 +80,14 @@ func main() {
 		logger.Fatalln(err)
 	}
 
+	primaryCertProvider := cert.MultiProvider{
+		primaryFileCertificateProvider(config, logger),
+	}
+	if config.Certificates.RedisAddress != "" {
+		primaryCertProvider = append(primaryCertProvider, primaryRedisCertificateProvider(config, logger))
+	}
 	providerAdaptor := &cert.ProviderAdaptor{
-		PrimaryProvider:   primaryCertificateProvider(config, logger),
+		PrimaryProvider:   primaryCertProvider,
 		SecondaryProvider: secondaryCertProvider,
 	}
 
@@ -213,13 +220,28 @@ func loadDefaultCertificate(config *cmd.Config) (*tls.Certificate, error) {
 	return &cert, err
 }
 
-func primaryCertificateProvider(
+func primaryFileCertificateProvider(
 	config *cmd.Config,
 	logger *log.Logger,
 ) cert.Provider {
 	return &cert.FileProvider{
 		BasePath: config.Certificates.BasePath,
+	}
+}
+
+func primaryRedisCertificateProvider(
+	config *cmd.Config,
+	logger *log.Logger,
+) cert.Provider {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     config.Certificates.RedisAddress,
+		Password: config.Certificates.RedisPassword,
+	})
+
+	return &cert.RedisProvider{
+		Client:   rdb,
 		Logger:   logger,
+		CacheAge: config.Certificates.RedisCacheExpire,
 	}
 }
 

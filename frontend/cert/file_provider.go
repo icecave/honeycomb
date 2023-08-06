@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -37,7 +37,7 @@ func (p *FileProvider) GetCertificate(ctx context.Context, n name.ServerName) (*
 		return cert, err
 	}
 
-	return nil, errors.New("file provider can not generated certificates")
+	return nil, fmt.Errorf("file %w", ErrProviderGenerateUnsupported)
 }
 
 // GetExistingCertificate attempts to fetch an existing certificate for the
